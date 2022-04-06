@@ -1,35 +1,96 @@
+if (!require("lubridate")){
+  install.packages("lubridate")
+}
+library(lubridate)
 
+source("scripts/save_data.R")
 
 readData <- function(){
+  print("readData")
   
-  print(getIdsAlreadyDone())
-  
-  ifn4 <- readIFN4(getIdsAlreadyDone())
-  
-  ifn4$percForestal <- NA
-  ifn4$percAgricola <- NA
-  ifn4$percPrados <- NA
-  ifn4$percResidencial <- NA
-  ifn4$percIndustrial <- NA
-  ifn4$percInproductivo <- NA
-  ifn4$percAgua <- NA
-  ifn4$percOtros <- NA
-  ifn4$tipoMosaico <- NA
-  
-  ifn4
+  data_started <- getStartedNotDone()
+  if(!is.null(data_started) && nrow(data_started) >= 10){
+    return(data_started[1:10,])
+  } else if(is.null(data_started) || nrow(data_started) == 0){
+    data_ifn4 <- readIFN4(getIdsAlreadyDoneOrInProcess())  
+    data_ifn4 <- addColumnsToData(data_ifn4)
+    insertIFN_VA_Class(data_ifn4)
+    return(data_ifn4)
+  } else{
+    data_ifn4 <- readIFN4(getIdsAlreadyDoneOrInProcess(),10-nrow(data_started)) 
+    data_ifn4 <- addColumnsToData(data_ifn4)
+    insertIFN_VA_Class(data_ifn4)
+    
+    return(rbind(data_started,data_ifn4))
+  }
 }
 
-getIdsAlreadyDone <- function(){
-  readIFN_VA_Class()[, c("plot_id")]
+addColumnsToData <- function(data){
+  data$cubiertaParcela <- NA
+  data$percForestal <- NA
+  data$percAgricola <- NA
+  data$percPrados <- NA
+  #data$percResidencial <- NA
+  #data$percIndustrial <- NA
+  data$percUrbano <- NA
+  data$percInproductivo <- NA
+  #data$percAgua <- NA
+  data$percOtros <- NA
+  data$tipoMosaico <- NA
+  data$sys_dt_started <- Sys.time()
+  data$sys_dt_done <- NA
+  data
 }
+
+getStartedNotDone <- function(){
+  print("getStartedNotDone")
+  ifn_va_class <- readIFN_VA_Class()
+  if (!is.null(ifn_va_class)) {
+    return(ifn_va_class[
+      (is.na(ifn_va_class$sys_dt_done)
+     &(Sys.time() > (as.POSIXct(ifn_va_class$sys_dt_started) + minutes(1))))
+    , ])
+  }
+  return(NULL)
+}
+
+getIdsAlreadyDoneOrInProcess <- function(){
+  print("getIdsAlreadyDone")
+  ifn_va_class <- readIFN_VA_Class()
+  if (!is.null(ifn_va_class)) {
+ 
+    return(ifn_va_class[
+      (!is.na(ifn_va_class$sys_dt_done)
+       || (is.na(ifn_va_class$sys_dt_done) 
+           & (Sys.time() <= (as.POSIXct(ifn_va_class$sys_dt_started) + minutes(1)))))
+      , c("plot_id")])
+    
+  }
+  return(NULL)
+}
+
 readIFN_VA_Class <- function(){
-  read.csv("./data/ifn_va_class.csv")
+  print("readIFN_VA_Class")
+  try(return(read.csv("./data/ifn_va_class.csv")))
+  return(NULL)
 }
 
-readIFN4 <- function(notIn_ids){
+readIFN4 <- function(notIn_ids, rows=10){
+  print("readIFN4")
   #TODO: use read.csv.sql filtering by not in notIn_ids
-  ifn4 <- read.csv("./data/20220330_nfi_data.csv")[ ,c('plot_id','coords_longitude', 'coords_latitude')]
-  ifn4 <- ifn4[!(ifn4$plot_id %in% notIn_ids),]
-  ifn4 <- ifn4[1:10,]
+  ifn4 <- read.csv("./data/20220330_nfi_data.csv")[ 
+    ,c('plot_id',
+       'coords_longitude', 
+       'coords_latitude', 
+       'admin_province', 
+       'admin_region', 
+       'admin_municipality',
+       'admin_aut_community',
+       'topo_fdm_slope_percentage',
+       'topo_altitude_asl' )]
+  if(!is.null(notIn_ids)){
+    ifn4 <- ifn4[!(ifn4$plot_id %in% notIn_ids),]
+  }
+  ifn4 <- ifn4[1:rows,]
   ifn4
 }
