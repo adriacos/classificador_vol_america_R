@@ -107,17 +107,7 @@ shinyUI(fluidPage(
                     sliderInput(inputId = "percUrbano", label = "Urbano", value=0, min=0, max=100,step=10),
                     #sliderInput(inputId = "percAgua", label = "Agua", value=0, min=0, max=100,step=25),
                     sliderInput(inputId = "percOtros", label = "Otros", value=0, min=0, max=100,step=10)
-                ),    
-                fluidRow(
-                          column(3,
-                                 imageOutput("landscape_1")),
-                          column(3,
-                                 imageOutput("landscape_2")),
-                          column(3,
-                                 imageOutput("landscape_3")),
-                          column(3,
-                                 imageOutput("landscape_4")),
-                      )),
+                )),
             wellPanel(
                 useShinyjs(),
                 fluidRow(
