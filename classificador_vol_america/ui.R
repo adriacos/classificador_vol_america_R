@@ -98,7 +98,7 @@ shinyUI(fluidPage(
             wellPanel(
                 fluidRow("Radio de 1 km (círculo rojo)"),
                 fluidRow(
-                    sliderInput(inputId = "percForestal", label = "Forestal", value=100, min=0, max=100,step=10, width='100%'),
+                    sliderInput(inputId = "percForestal", label = "Forestal", value=0, min=0, max=100,step=10, width='100%'),
                     sliderInput(inputId = "percAgricola", label = "Agricola", value=0, min=0, max=100,step=10),
                     sliderInput(inputId = "percPrados", label = "Prados", value=0, min=0, max=100,step=10),
                     #sliderInput(inputId = "percResidencial", label = "Residencial", value=0, min=0, max=100,step=25),
