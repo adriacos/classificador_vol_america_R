@@ -23,6 +23,34 @@ shinyServer(function(input, output, session) {
     #insertIFN_VA_Class(data)
     activeParcela <- reactiveValues(count=1, data=data, 
                                     initiated=list("forestal"=TRUE, "agricola"=TRUE, "prados"=TRUE, "inproductivo"=TRUE, "urbano"=TRUE, "otros"=TRUE))
+    output$landscape_1 <- renderImage({
+        list(src = "./images/landscape_1.png",
+             contentType = 'image/png',
+             width = 90,
+             height = 60,
+             alt = "This is alternate text")
+    })
+    output$landscape_2 <- renderImage({
+        list(src = "./images/landscape_2.png",
+             contentType = 'image/png',
+             width = 90,
+             height = 60,
+             alt = "This is alternate text")
+    })
+    output$landscape_3 <- renderImage({
+        list(src = "./images/landscape_3.png",
+             contentType = 'image/png',
+             width = 90,
+             height = 60,
+             alt = "This is alternate text")
+    })
+    output$landscape_4 <- renderImage({
+        list(src = "./images/landscape_4.png",
+             contentType = 'image/png',
+             width = 90,
+             height = 60,
+             alt = "This is alternate text")
+    })
     
     output$map <- renderLeaflet(
         create_map(data[activeParcela$count, "coords_latitude"],data[activeParcela$count, "coords_longitude"])

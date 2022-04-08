@@ -95,16 +95,29 @@ shinyUI(fluidPage(
                                              "Inproductivo"="inproductivo",
                                              "Otros"="otros"),
                                    selected="null")),
-            wellPanel("Radio de 1 km (círculo rojo)",
-                        sliderInput(inputId = "percForestal", label = "Forestal", value=100, min=0, max=100,step=10, width='100%'),
-                        sliderInput(inputId = "percAgricola", label = "Agricola", value=0, min=0, max=100,step=10),
-                        sliderInput(inputId = "percPrados", label = "Prados", value=0, min=0, max=100,step=10),
-                        #sliderInput(inputId = "percResidencial", label = "Residencial", value=0, min=0, max=100,step=25),
-                        #sliderInput(inputId = "percIndustrial", label = "Industrial", value=0, min=0, max=100,step=25),
-                        sliderInput(inputId = "percInproductivo", label = "Inproductivo", value=0, min=0, max=100,step=10),
-                        sliderInput(inputId = "percUrbano", label = "Urbano", value=0, min=0, max=100,step=10),
-                        #sliderInput(inputId = "percAgua", label = "Agua", value=0, min=0, max=100,step=25),
-                        sliderInput(inputId = "percOtros", label = "Otros", value=0, min=0, max=100,step=10)),
+            wellPanel(
+                fluidRow("Radio de 1 km (círculo rojo)"),
+                fluidRow(
+                    sliderInput(inputId = "percForestal", label = "Forestal", value=100, min=0, max=100,step=10, width='100%'),
+                    sliderInput(inputId = "percAgricola", label = "Agricola", value=0, min=0, max=100,step=10),
+                    sliderInput(inputId = "percPrados", label = "Prados", value=0, min=0, max=100,step=10),
+                    #sliderInput(inputId = "percResidencial", label = "Residencial", value=0, min=0, max=100,step=25),
+                    #sliderInput(inputId = "percIndustrial", label = "Industrial", value=0, min=0, max=100,step=25),
+                    sliderInput(inputId = "percInproductivo", label = "Inproductivo", value=0, min=0, max=100,step=10),
+                    sliderInput(inputId = "percUrbano", label = "Urbano", value=0, min=0, max=100,step=10),
+                    #sliderInput(inputId = "percAgua", label = "Agua", value=0, min=0, max=100,step=25),
+                    sliderInput(inputId = "percOtros", label = "Otros", value=0, min=0, max=100,step=10)
+                ),    
+                fluidRow(
+                          column(3,
+                                 imageOutput("landscape_1")),
+                          column(3,
+                                 imageOutput("landscape_2")),
+                          column(3,
+                                 imageOutput("landscape_3")),
+                          column(3,
+                                 imageOutput("landscape_4")),
+                      )),
             wellPanel(
                 useShinyjs(),
                 fluidRow(
@@ -114,15 +127,14 @@ shinyUI(fluidPage(
                     column(6,
                            actionButton(inputId="nextButton", label="Next")
                     )
-                )
-            )
+                ))
             ),
         mainPanel(
             leafletOutput("map", height=624),
-            
+        )
         )
     )
-))
+)
 
 
 
