@@ -1,12 +1,12 @@
 
-if (!require("shiny")){
-    install.packages("shiny")
-}
+#if (!require("shiny")){
+#    install.packages("shiny")
+#}
 library(shiny)
 
-if (!require("sqldf")){
-    install.packages("sqldf")
-}
+#if (!require("sqldf")){
+#    install.packages("sqldf")
+#}
 library(sqldf)
 
 library(shiny)
@@ -37,7 +37,7 @@ shinyServer(function(input, output, session) {
     })
     
     output$dataTable = renderTable({
-        tableData()
+        tableData()[!is.na(tableData()$sys_dt_done),]
     })
     
     output$title <- renderText({
@@ -71,7 +71,6 @@ shinyServer(function(input, output, session) {
             updateIFN_VA_Class(activeParcela$data[activeParcela$count,])
             
             if(activeParcela$count>=nrow(activeParcela$data)){
-                print("MAX REACHED")
                 activeParcela$data <- activeParcela$data[1,]
                 data <- readData()
                 activeParcela$data <- rbind(activeParcela$data, data)

@@ -1,17 +1,17 @@
 
-if (!require("shiny")){
-    install.packages("shiny")
-}
+#if (!require("shiny")){
+#    install.packages("shiny")
+#}
 library(shiny)
 
-if (!require("shinyjs")){
-    install.packages("shinyjs")
-}
+#if (!require("shinyjs")){
+#    install.packages("shinyjs")
+#}
 library(shinyjs)
 
-if (!require("leaflet")){
-    install.packages("leaflet")
-}
+#if (!require("leaflet")){
+#    install.packages("leaflet")
+#}
 library(leaflet)
 
 shinyUI(fluidPage(

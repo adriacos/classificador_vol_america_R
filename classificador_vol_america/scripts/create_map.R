@@ -1,11 +1,11 @@
 create_map <- function(lat, long){
 	
-	if (!require("leaflet")){
-		install.packages("leaflet")
-	}
-	if (!require("leaflet.opacity")){
-		install.packages("leaflet.opacity")	
-	}
+#	if (!require("leaflet")){
+#		install.packages("leaflet")
+#	}
+#	if (!require("leaflet.opacity")){
+#		install.packages("leaflet.opacity")	
+#	}
 	library(leaflet)
 	library(leaflet.opacity)
 

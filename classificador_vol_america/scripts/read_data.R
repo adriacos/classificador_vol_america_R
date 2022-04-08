@@ -1,13 +1,13 @@
-if (!require("lubridate")){
-  install.packages("lubridate")
-}
+#if (!require("lubridate")){
+#  install.packages("lubridate")
+#}
 library(lubridate)
 
 source("scripts/save_data.R")
 
 
 
-readData <- function(registers=2){
+readData <- function(registers=10){
   print("readData")
   
   data_started <- getStartedNotDone()
