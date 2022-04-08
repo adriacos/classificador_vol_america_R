@@ -5,19 +5,21 @@ library(lubridate)
 
 source("scripts/save_data.R")
 
-readData <- function(){
+
+
+readData <- function(registers=2){
   print("readData")
   
   data_started <- getStartedNotDone()
-  if(!is.null(data_started) && nrow(data_started) >= 10){
-    return(data_started[1:10,])
+  if(!is.null(data_started) && nrow(data_started) >= registers){
+    return(data_started[1:registers,])
   } else if(is.null(data_started) || nrow(data_started) == 0){
-    data_ifn4 <- readIFN4(getIdsAlreadyDoneOrInProcess())  
+    data_ifn4 <- readIFN4(getIdsAlreadyDoneOrInProcess(), registers)  
     data_ifn4 <- addColumnsToData(data_ifn4)
     insertIFN_VA_Class(data_ifn4)
     return(data_ifn4)
   } else{
-    data_ifn4 <- readIFN4(getIdsAlreadyDoneOrInProcess(),10-nrow(data_started)) 
+    data_ifn4 <- readIFN4(getIdsAlreadyDoneOrInProcess(),registers-nrow(data_started)) 
     data_ifn4 <- addColumnsToData(data_ifn4)
     insertIFN_VA_Class(data_ifn4)
     
@@ -75,7 +77,7 @@ readIFN_VA_Class <- function(){
   return(NULL)
 }
 
-readIFN4 <- function(notIn_ids, rows=10){
+readIFN4 <- function(notIn_ids, rows){
   print("readIFN4")
   #TODO: use read.csv.sql filtering by not in notIn_ids
   ifn4 <- read.csv("./data/20220330_nfi_data.csv")[ 

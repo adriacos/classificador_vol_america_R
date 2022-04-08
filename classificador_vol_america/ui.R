@@ -76,55 +76,60 @@ shinyUI(fluidPage(
                 float:right;
                 }")),
     ),
-
     
-    headerPanel(
-        textOutput("title")
-    ),
-    sidebarLayout(
-        
-        sidebarPanel(
-            wellPanel("Radio de 25 m (círculo rojo)",
-                      selectInput(inputId="cubiertaParcela", 
-                                   label="Cubierta de la parcela",
-                                   choices=c("-"="null",
-                                             "Forestal"="forestal", 
-                                             "Agrícola"="agricola",
-                                             "Prados"="prados",
-                                             "Urbano"="urbano",
-                                             "Inproductivo"="inproductivo",
-                                             "Otros"="otros"),
-                                   selected="null")),
-            wellPanel(
-                fluidRow("Radio de 1 km (círculo rojo)"),
-                fluidRow(
-                    sliderInput(inputId = "percForestal", label = "Forestal", value=0, min=0, max=100,step=10, width='100%'),
-                    sliderInput(inputId = "percAgricola", label = "Agricola", value=0, min=0, max=100,step=10),
-                    sliderInput(inputId = "percPrados", label = "Prados", value=0, min=0, max=100,step=10),
-                    #sliderInput(inputId = "percResidencial", label = "Residencial", value=0, min=0, max=100,step=25),
-                    #sliderInput(inputId = "percIndustrial", label = "Industrial", value=0, min=0, max=100,step=25),
-                    sliderInput(inputId = "percInproductivo", label = "Inproductivo", value=0, min=0, max=100,step=10),
-                    sliderInput(inputId = "percUrbano", label = "Urbano", value=0, min=0, max=100,step=10),
-                    #sliderInput(inputId = "percAgua", label = "Agua", value=0, min=0, max=100,step=25),
-                    sliderInput(inputId = "percOtros", label = "Otros", value=0, min=0, max=100,step=10)
-                )),
-            wellPanel(
-                useShinyjs(),
-                fluidRow(
-                    column(6, 
-                           disabled(actionButton(inputId="previousButton", label="Previous"))
+    tabsetPanel(type = "tabs", id = "tabs",
+                tabPanel("classificador", 
+                         headerPanel(
+                             textOutput("title")
+                         ),
+                         sidebarLayout(
+                             
+                             sidebarPanel(
+                                 wellPanel("Radio de 25 m (círculo rojo)",
+                                           selectInput(inputId="cubiertaParcela", 
+                                                       label="Cubierta de la parcela",
+                                                       choices=c("-"="null",
+                                                                 "Forestal"="forestal", 
+                                                                 "Agrícola"="agricola",
+                                                                 "Prados"="prados",
+                                                                 "Urbano"="urbano",
+                                                                 "Inproductivo"="inproductivo",
+                                                                 "Otros"="otros"),
+                                                       selected="null")),
+                                 wellPanel(
+                                     fluidRow("Radio de 1 km (círculo rojo)"),
+                                     fluidRow(
+                                         sliderInput(inputId = "percForestal", label = "Forestal", value=0, min=0, max=100,step=10, width='100%'),
+                                         sliderInput(inputId = "percAgricola", label = "Agricola", value=0, min=0, max=100,step=10),
+                                         sliderInput(inputId = "percPrados", label = "Prados", value=0, min=0, max=100,step=10),
+                                         #sliderInput(inputId = "percResidencial", label = "Residencial", value=0, min=0, max=100,step=25),
+                                         #sliderInput(inputId = "percIndustrial", label = "Industrial", value=0, min=0, max=100,step=25),
+                                         sliderInput(inputId = "percInproductivo", label = "Inproductivo", value=0, min=0, max=100,step=10),
+                                         sliderInput(inputId = "percUrbano", label = "Urbano", value=0, min=0, max=100,step=10),
+                                         #sliderInput(inputId = "percAgua", label = "Agua", value=0, min=0, max=100,step=25),
+                                         sliderInput(inputId = "percOtros", label = "Otros", value=0, min=0, max=100,step=10)
+                                     )),
+                                 wellPanel(
+                                     useShinyjs(),
+                                     fluidRow(
+                                         column(6, 
+                                                disabled(actionButton(inputId="previousButton", label="Previous"))
+                                         ),
+                                         column(6,
+                                                actionButton(inputId="nextButton", label="Next")
+                                         )
+                                     ))
+                             ),
+                             mainPanel(
+                                 leafletOutput("map", height=624),
+                             )
+                         )  
                     ),
-                    column(6,
-                           actionButton(inputId="nextButton", label="Next")
-                    )
-                ))
-            ),
-        mainPanel(
-            leafletOutput("map", height=624),
-        )
-        )
-    )
-)
+                tabPanel("data", 
+                         tableOutput('dataTable')
+                    ))
+   
+))
 
 
 

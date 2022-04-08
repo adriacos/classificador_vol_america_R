@@ -22,10 +22,23 @@ shinyServer(function(input, output, session) {
     data <- readData()
     #insertIFN_VA_Class(data)
     activeParcela <- reactiveValues(count=1, data=data)
-
+    
+    tableData <- reactiveVal()
+    
     output$map <- renderLeaflet(
-        create_map(data[activeParcela$count, "coords_latitude"],data[activeParcela$count, "coords_longitude"])
+        create_map(activeParcela$data[activeParcela$count, "coords_latitude"],activeParcela$data[activeParcela$count, "coords_longitude"])
         )
+    
+    observeEvent(input$tabs, {
+        if(input$tabs == "data"){
+            print("data tab selected")
+            tableData(readIFN_VA_Class())
+        }
+    })
+    
+    output$dataTable = renderTable({
+        tableData()
+    })
     
     output$title <- renderText({
         return(paste(activeParcela$data[activeParcela$count,]$plot_id, 
@@ -57,7 +70,15 @@ shinyServer(function(input, output, session) {
             
             updateIFN_VA_Class(activeParcela$data[activeParcela$count,])
             
-            activeParcela$count = activeParcela$count + 1
+            if(activeParcela$count>=nrow(activeParcela$data)){
+                print("MAX REACHED")
+                activeParcela$data <- activeParcela$data[1,]
+                data <- readData()
+                activeParcela$data <- rbind(activeParcela$data, data)
+                activeParcela$count = 2
+            } else{
+                activeParcela$count = activeParcela$count + 1
+            }
            
             updateSliderInput(session, "cubiertaParcela", value="null")
             updateSliderInput(session, "percForestal", value=0)
