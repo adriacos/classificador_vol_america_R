@@ -14,6 +14,26 @@ library(shinyjs)
 #}
 library(leaflet)
 
+reclass_df6 <- c(0,0.0001,NA,0.0001,0.16666,0.083333,0.16666,0.33333,0.25,0.33333,0.5,0.416666,0.5,0.66666,0.583333,0.66666,0.83333,0.75, 0.83333, 0.99999, 0.916666, 0.99999,1,NA)
+reclass_df5 <- c(0,0.0001,NA,0.0001,0.2,0.1,0.2,0.4,0.3,0.4,0.6,0.5,0.6,0.8,0.7,0.8,0.9999,0.9,0.9999,1,NA)
+reclass_df4 <- c(0,0.0001,NA,0.0001,0.25,0.12,0.25,0.5,0.37,0.5,0.75,0.62,0.75,0.9999,0.75,0.9999,1,NA)
+reclass_m6 <- matrix(reclass_df6, ncol=3, byrow=TRUE)
+reclass_m5 <- matrix(reclass_df5, ncol=3, byrow=TRUE)
+reclass_m4 <- matrix(reclass_df4, ncol=3, byrow=TRUE)
+
+r <- rast
+r<- focal(r, w=matrix(1/9,nrow=3,ncol=3)) 
+r <- reclassify(r, reclass_m5)
+r<- focal(r, w=matrix(1/25,nrow=5,ncol=5)) 
+r <- reclassify(r, reclass_m5)
+r<- focal(r, w=matrix(1/25,nrow=5,ncol=5)) 
+r <- reclassify(r, reclass_m5)
+r<- focal(r, w=matrix(1/9,nrow=3,ncol=3)) 
+r <- reclassify(r, reclass_m5)
+
+plot(r, col=grey_scale(6))
+
+
 shinyUI(fluidPage(
     tags$script("
         Shiny.addCustomMessageHandler('changePercForestal', function(value) {

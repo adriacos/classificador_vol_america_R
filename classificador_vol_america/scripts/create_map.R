@@ -24,6 +24,7 @@ create_map <- function(lat, long){
 		layerId = "ortofoto", 
 		group = "ortofoto",
 	)
+
 	m <- addWMSTiles(m, 
     		"https://www.ign.es/wms/pnoa-historico",
     		layers = "AMS_1956-1957",
@@ -38,10 +39,40 @@ create_map <- function(lat, long){
 	#m <- addCircles(m, data=df, radius = 3000, fillColor = "transparent", color = "red", weight=1.5)
 	#m <- addOpacitySlider(m, layerId="1956")
 
+	export_map(m)
+	
 	m <- addLayersControl(m, 
     		baseGroups = c("1956", "ortofoto", "base"),
     		#overlayGroups = c("Quakes", "Outline"),
     		options = layersControlOptions(collapsed = FALSE)
   )
 	return(m)
+}
+
+export_map <- function(m){
+  
+  library(htmlwidgets)
+  library(webshot)
+  library(png)
+  library(raster)
+  
+  saveWidget(m, "leaflet_map.html", selfcontained = FALSE)
+  webshot("leaflet_map.html", file = "leaflet_map.png",
+          cliprect = "viewport")
+  
+  img <- readPNG("leaflet_map.png")
+  
+  img[img==1]=NA
+  ar2mat <- matrix(img, nrow = nrow(img), ncol = ncol(img))
+  ## Define the extent
+  rast = raster(ar2mat, xmn=0, xmx=1, ymn=0, ymx=1)
+  ## Define the spatial reference system
+  proj4string(rast) <- CRS("+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs")
+  
+  plot(rast); extent(rast)
+  writeRaster(rast, "raster.tif", format="GTiff", overwrite=TRUE)
+  
+  
+  #rc <- clump(rast)
+  
 }
