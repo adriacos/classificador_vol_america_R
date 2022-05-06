@@ -35,11 +35,12 @@ create_map <- function(lat, long){
 	)
 	
 	m <- addCircles(m, data=df, radius = 25, fillColor = "transparent", color = "orange", weight=1.5)
-	m <- addCircles(m, data=df, radius = 1000, fillColor = "transparent", color = "red", weight=1.5)
+	#m <- addCircles(m, data=df, radius = 1000, fillColor = "transparent", color = "red", weight=1.5)
+	
 	#m <- addCircles(m, data=df, radius = 3000, fillColor = "transparent", color = "red", weight=1.5)
 	#m <- addOpacitySlider(m, layerId="1956")
 
-	export_map(m)
+	#export_map(m)
 	
 	m <- addLayersControl(m, 
     		baseGroups = c("1956", "ortofoto", "base"),

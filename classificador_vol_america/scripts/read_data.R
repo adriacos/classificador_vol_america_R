@@ -29,16 +29,7 @@ readData <- function(registers=10){
 
 addColumnsToData <- function(data){
   data$cubiertaParcela <- NA
-  data$percForestal <- NA
-  data$percAgricola <- NA
-  data$percPrados <- NA
-  #data$percResidencial <- NA
-  #data$percIndustrial <- NA
-  data$percUrbano <- NA
-  data$percInproductivo <- NA
-  #data$percAgua <- NA
-  data$percOtros <- NA
-  data$tipoMosaico <- NA
+  
   data$sys_dt_started <- Sys.time()
   data$sys_dt_done <- NA
   data

@@ -1,7 +1,10 @@
 smoothen <- function(rast){
   s <- rast
   cells <- cellFromRowColCombine(rast, c(1:nrow(rast)),c(1:ncol(rast)))
-  values(s) <- sapply(cells, test, rast=rast)
+  for(i in 1:5){
+    values(s) <- sapply(cells, test, rast=rast)
+  }
+  
 }
 
 test <- function(x, rast){
