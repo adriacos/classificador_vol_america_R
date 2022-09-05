@@ -11,7 +11,8 @@ create_map <- function(lat, long){
 
 	epsg4258 <- leafletCRS(crsClass="L.Proj.CRS", code="EPSG:4258", proj4def="+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs", resolutions=1.5^(25:15))	
 
-	#lat = 41.8817
+	#lat = 41.8817 writeOGR(map, ".", "filename", 
+	driver = "ESRI Shapefile")
 	#long = 2.90968
 	df <- data.frame(lat=lat, long=long)
 	m <- leaflet()
