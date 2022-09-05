@@ -49,3 +49,17 @@ test <- function(x, rast){
 }
 
 
+test3 <- function(){
+  r <- rast
+  r<- focal(r, w=matrix(1/9,nrow=3,ncol=3)) 
+  r <- reclassify(r, reclass_m5)
+  r<- focal(r, w=matrix(1/25,nrow=5,ncol=5)) 
+  r <- reclassify(r, reclass_m5)
+  r<- focal(r, w=matrix(1/25,nrow=5,ncol=5)) 
+  r <- reclassify(r, reclass_m5)
+  r<- focal(r, w=matrix(1/9,nrow=3,ncol=3)) 
+  r <- reclassify(r, reclass_m5)
+  
+  plot(r, col=grey_scale(6))
+}
+
