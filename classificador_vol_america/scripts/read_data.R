@@ -11,18 +11,24 @@ readData <- function(registers=10){
   print("readData")
   
   data_started <- getStartedNotDone()
+  
+
   if(!is.null(data_started) && nrow(data_started) >= registers){
+    print("rd1")
     return(data_started[1:registers,])
   } else if(is.null(data_started) || nrow(data_started) == 0){
+    print("rd2")
     data_ifn4 <- readIFN4(getIdsAlreadyDoneOrInProcess(), registers)  
     data_ifn4 <- addColumnsToData(data_ifn4)
     insertIFN_VA_Class(data_ifn4)
     return(data_ifn4)
   } else{
+    print("rd3")
     data_ifn4 <- readIFN4(getIdsAlreadyDoneOrInProcess(),registers-nrow(data_started)) 
     data_ifn4 <- addColumnsToData(data_ifn4)
     insertIFN_VA_Class(data_ifn4)
-    
+    data_started$sys_dt_started <- as.POSIXct(data_started$sys_dt_started)
+    data_started$sys_dt_started <- as.POSIXct(data_started$sys_dt_started)
     return(rbind(data_started,data_ifn4))
   }
 }
@@ -51,8 +57,7 @@ getIdsAlreadyDoneOrInProcess <- function(){
   print("getIdsAlreadyDone")
   ifn_va_class <- readIFN_VA_Class()
   if (!is.null(ifn_va_class)) {
- 
-    return(ifn_va_class[
+     return(ifn_va_class[
       (!is.na(ifn_va_class$sys_dt_done)
        || (is.na(ifn_va_class$sys_dt_done) 
            & (Sys.time() <= (as.POSIXct(ifn_va_class$sys_dt_started) + minutes(1)))))

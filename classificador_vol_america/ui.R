@@ -87,14 +87,15 @@ shinyUI(fluidPage(
                              sidebarPanel(
                                  wellPanel("Radio de 25 m (círculo rojo)",
                                            radioButtons("cubiertaParcela", 
-                                                        label="Cubierta de la parcela",
-                                                        choices=c("Forestal"="forestal", 
+                                                        label="Cubierta mayoritaria de la parcela",
+                                                        choices=c("Bosque denso"="b.denso", 
+                                                                  "Bosque ralo"="b. ralo",
                                                                   "Agrícola"="agricola",
-                                                                  "Prados"="prados",
+                                                                  "Pasturaje"="pasturaje",
                                                                   "Urbano"="urbano",
                                                                   "Inproductivo"="inproductivo",
                                                                   "Otros"="otros"),
-                                                        selected = "forestal",
+                                                        selected = "b.denso",
                                                         )
                                            ),
                                  wellPanel(

@@ -54,8 +54,9 @@ shinyServer(function(input, output, session) {
    observeEvent(input$nextButton, {
         
             activeParcela$data[activeParcela$count,]$cubiertaParcela <- input$cubiertaParcela
-            
-            activeParcela$data[activeParcela$count,]$sys_dt_done <- Sys.time()
+            print(Sys.time())
+            activeParcela$data[activeParcela$count,]$sys_dt_done <- toString(as.POSIXct(Sys.time()))
+            print(activeParcela$data[activeParcela$count,]$sys_dt_done)
             
             updateIFN_VA_Class(activeParcela$data[activeParcela$count,])
             
@@ -68,7 +69,7 @@ shinyServer(function(input, output, session) {
                 activeParcela$count = activeParcela$count + 1
             }
            
-            updateSliderInput(session, "cubiertaParcela", value="forestal")
+            updateSliderInput(session, "cubiertaParcela", value="b.denso")
           
             enable("previousButton")
         

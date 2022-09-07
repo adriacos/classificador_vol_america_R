@@ -1,11 +1,13 @@
 name: classificador_vol_america
-title:
+title: classificador_vol_america
 username:
 account: adriacos
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 5974062
-bundleId: 5777404
+bundleId: 6277959
 url: https://adriacos.shinyapps.io/classificador_vol_america/
-when: 1649406674.83471
-lastSyncTime: 1649406674.83471
+when: 1662562048.87187
+lastSyncTime: 1662562048.87191
+asMultiple: FALSE
+asStatic: FALSE

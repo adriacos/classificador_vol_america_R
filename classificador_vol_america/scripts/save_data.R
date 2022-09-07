@@ -15,7 +15,7 @@ insertIFN_VA_Class <- function(data){
 updateIFN_VA_Class <-function(register){
   print("update")
   ifn_va_class <- read.csv("data/ifn_va_class.csv")
-  print(ifn_va_class[ifn_va_class$plot_id==register$plot_id,])
+  #print(ifn_va_class[ifn_va_class$plot_id==register$plot_id,])
   print(register)
   ifn_va_class[ifn_va_class$plot_id==register$plot_id,] <- register
   ifn_va_class[ifn_va_class$plot_id==register$plot_id,]$sys_dt_started <-
