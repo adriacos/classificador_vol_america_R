@@ -8,6 +8,8 @@ _VALUE_FIELD = 'DN'
 _NEW_AREA_FIELD = 'intArea'
 _NEW_VALUE_FIELD = 'intValue'
 _NEW_DISSOLVED_FIELD = 'dissolved'
+_NEIGHBORS_FIELD = 'neighbors'
+
 
 layer = iface.activeLayer()
 
@@ -44,27 +46,25 @@ geoms = list()
 for f in feature_dict.values():
     if(f[_NEW_AREA_FIELD] > 59999999):
         continue
-#    if(count > 300):
-#        break
-#    count = count + 1 
-#    print(f[_NEW_AREA_FIELD])
-    #print('Working on %s' % tostring(f.id) % 'area:' % tostring(f[_NEW_AREA_FIELD]))
-    geom = f.geometry()
-    # Find all features that intersect the bounding box of the current feature.
-    # We use spatial index to find the features intersecting the bounding box
-    # of the current feature. This will narrow down the features that we need
-    # to check neighboring features.
-    intersecting_ids = index.intersects(geom.boundingBox())
+
+    #geom = f.geometry()
+    #intersecting_ids = index.intersects(geom.boundingBox())
+    
+    intersecting_ids = f[_NEIGHBORS_FIELD].split(",")
+    
     closest_area = 0
     closest_DN = 0
     closest_id = 0
     #combined = QgsGeometry.fromWkt('GEOMETRYCOLLECTION EMPTY')
     combined = QgsGeometry()
     for intersecting_id in intersecting_ids:
-        intersecting_f = feature_dict[intersecting_id]
-        if (f != intersecting_f and
-            intersecting_f[_NEW_DISSOLVED_FIELD] != 1 and
-            not intersecting_f.geometry().disjoint(geom)):
+        if(intersecting_id==""):
+            continue
+        print(intersecting_id)
+        intersecting_f = feature_dict[int(intersecting_id)]
+        if (f != intersecting_f and 
+            intersecting_f[_NEW_DISSOLVED_FIELD] != 1):
+            #and not intersecting_f.geometry().disjoint(geom)
             if (closest_id == 0): 
                 closest_DN = intersecting_f[_NEW_VALUE_FIELD]
                 closest_area = intersecting_f[_NEW_AREA_FIELD]
@@ -79,10 +79,12 @@ for f in feature_dict.values():
             #print(update_f[_NEW_AREA_FIELD])
             #print(update_f.id())
             #print(closest_id)
+            sum_neighbours = f[_NEIGHBORS_FIELD] +"," + update_f[_NEIGHBORS_FIELD]
             sum_area = f[_NEW_AREA_FIELD] + update_f[_NEW_AREA_FIELD]
             sum_value = (f[_NEW_AREA_FIELD]/sum_area * f[_NEW_VALUE_FIELD]) + (update_f[_NEW_AREA_FIELD]/sum_area * update_f[_NEW_VALUE_FIELD])
             update_f[_NEW_AREA_FIELD] = sum_area 
             update_f[_NEW_VALUE_FIELD] = sum_value
+            update_f[_NEIGHBORS_FIELD] = sum_neighbours
             #f[_NEW_DISSOLVED_FIELD] = 1
             #layer.updateFeature(f)
             combined = f.geometry()
