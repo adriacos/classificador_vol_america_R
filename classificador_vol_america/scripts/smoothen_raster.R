@@ -2,7 +2,7 @@
 
 smoothen <- function(rast){
   library(raster)
-  library(SpaDES)
+  library(SpaDES)library(rgdal)
   raster_split <- splitRaster(rast, 10,10, buffer=c(2,2))
   for(i in 1:10){
     print(paste("start ", i, Sys.time()))
@@ -26,6 +26,14 @@ vect <- sf::as_Spatial(
 vect <- st_as_stars(rast) %>% 
   st_as_sf(merge = TRUE) %>% # this is the raster to polygons part
   st_cast("MULTILINESTRING") # cast the polygons to polylines
+
+
+library(rgdal)
+vect <- readOGR(dsn = "./vect", layer = "vect_10_corr")
+neighbours <- gTouches(vect, returnDense=FALSE, byid=TRUE)
+neighbours <- sapply(neighbours,paste,collapse=",")
+vect$neighbors <- neighbours
+ 
 
 
 
