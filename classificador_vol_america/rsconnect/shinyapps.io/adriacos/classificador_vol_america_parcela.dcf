@@ -1,0 +1,13 @@
+name: classificador_vol_america_parcela
+title: classificador_vol_america_parcela
+username:
+account: adriacos
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 6247269
+bundleId: 6293051
+url: https://adriacos.shinyapps.io/classificador_vol_america_parcela/
+when: 1662974256.19145
+lastSyncTime: 1662974256.19146
+asMultiple: FALSE
+asStatic: FALSE
