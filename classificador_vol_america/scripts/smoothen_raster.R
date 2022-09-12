@@ -2,7 +2,7 @@
 
 smoothen <- function(rast){
   library(raster)
-  library(SpaDES)
+  library(SpaDES)library(rgdal)
   raster_split <- splitRaster(rast, 10,10, buffer=c(2,2))
   for(i in 1:10){
     print(paste("start ", i, Sys.time()))
@@ -28,6 +28,14 @@ vect <- st_as_stars(rast) %>%
   st_cast("MULTILINESTRING") # cast the polygons to polylines
 
 
+library(rgdal)
+vect <- readOGR(dsn = "./vect", layer = "vect_10_corr")
+neighbours <- gTouches(vect, returnDense=FALSE, byid=TRUE)
+neighbours <- sapply(neighbours,paste,collapse=",")
+vect$neighbors <- neighbours
+ 
+
+
 
 test2 <- function(rast){
   test <- function(x, rast){
@@ -48,4 +56,18 @@ test <- function(x, rast){
   m
 }
 
+
+test3 <- function(){
+  r <- rast
+  r<- focal(r, w=matrix(1/9,nrow=3,ncol=3)) 
+  r <- reclassify(r, reclass_m5)
+  r<- focal(r, w=matrix(1/25,nrow=5,ncol=5)) 
+  r <- reclassify(r, reclass_m5)
+  r<- focal(r, w=matrix(1/25,nrow=5,ncol=5)) 
+  r <- reclassify(r, reclass_m5)
+  r<- focal(r, w=matrix(1/9,nrow=3,ncol=3)) 
+  r <- reclassify(r, reclass_m5)
+  
+  plot(r, col=grey_scale(6))
+}
 
