@@ -69,6 +69,8 @@ test.dissolve <- test$dissolve
 test.union <- unionSpatialPolygons(test, test$dissolve)
 test.df <- as(test,"data.frame")
 neighbors <- paste(test.df[test$dissolve==1,]$neighbors,collapse=",")
+neighbors <- unique(str_split(neighbors, ","))
+
 test.df.agg <- aggregate(test.df[, 2:5], list(test.id), mean)
 
 
