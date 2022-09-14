@@ -43,7 +43,7 @@ library(future)
 
 #cores <- detectCores()
 #registerDoParallel(cores)
-plan(multisession)
+plan(cluster)
 
 vect <- readOGR(dsn = "./vect", layer = "vect_10_corr")
 neighbours <- gTouches(vect, returnDense=FALSE, byid=TRUE)
