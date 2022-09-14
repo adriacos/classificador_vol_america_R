@@ -28,53 +28,68 @@ vect <- st_as_stars(rast) %>%
   st_cast("MULTILINESTRING") # cast the polygons to polylines
 
 
+ids <- 1:400
+test <- vect[(vect$fid %in% ids),]
+
+
 library(rgdal)
+library(rgeos)
+library(stringr)
+library(maptools)
+
 vect <- readOGR(dsn = "./vect", layer = "vect_10_corr")
 neighbours <- gTouches(vect, returnDense=FALSE, byid=TRUE)
 neighbours <- sapply(neighbours,paste,collapse=",")
 vect$neighbors <- neighbours
- 
 
+ids <- 1:400
+test <- vect[(vect$fid %in% ids),]
+c <- 1
+repeat{
+  if(c>=1000){
+    break
+  }
+  test.min <- test[which.min(test$area),]
+  if(test.min$area >= 60000){
+    break
+  }
+  test.min.neighbors <- test[test$fid %in% str_split(test.min$neighbors, ",")[[1]],]
+  test.min.neighbors.min <- test.min.neighbors[which.min(test.min.neighbors$area),]
+  
+  test$dissolve <- test$fid
+  test$dissolve <- factor(test$dissolve, levels=unique(test$fid))
+  
+  ids <- c(toString(test.min$fid), toString(test.min.neighbors.min$fid))
+  test[test$fid %in% ids,"dissolve"] <- ids[1]
+  test.dissolve <- test$dissolve
+  
+  test.union <- unionSpatialPolygons(test, test$dissolve)
+  test.df <- as(test,"data.frame")
+  neighbors <- paste(test.df[test$dissolve==ids[1],]$neighbors,collapse=",")
+  neighbors <- unique(str_split(neighbors, ","))[[1]]
+  neighbors <- neighbors[!(neighbors %in% ids)]
+  neighbors <- paste(neighbors, collapse = ",")
+    
+  test.df.agg <- aggregate(test.df[, c("DN", "area", "intArea","intValue")], list(test.dissolve), mean)
+  row.names(test.df.agg) <- as.character(test.df.agg$Group.1)
+  colnames(test.df.agg)[1] <- "fid"
+  test.df.agg$neighbors <- test$neighbors[test$fid!=ids[2]]
+  test.df.agg$neighbors[test.df.agg$fid==ids[1]] <- neighbors
 
-for(i in 1:nrow(vect)){
-  print(vect[i,]$fid)
+  test.shp.agg <- SpatialPolygonsDataFrame(test.union, test.df.agg)
+  
+  test <- test.shp.agg
+  test.shp.agg <- NULL
+  test.df.agg <- NULL
+  test.df <- NULL
+  test.union <- NULL
+  test.dissolve <- NULL
+  test.min.neighbors.min <- NULL
+  test.min.neighbors <- NULL
+  test.min <- NULL
+  
+  c <- c+1
 }
-
-nrow(vect[c(1,2),])
-
-test <- vect[(vect$fid==1|vect$fid==985),]
-
-test2 <- aggregate(test,dissolve=T,areaWeighted=T,by=list(test$area,test$DN),mean)
-
-
-    fid DN      area   intArea intValue dissolved
-0     1  3  16675.65  16675.65        3         0
-5     6  7  50026.98  50026.98        7         0
-541 542  6  50027.08  50027.08        6         0
-984 985  5 166757.36 166757.36        5         0
-
-    Group.1 Group.2 fid DN      area   intArea intValue dissolved neighbors
-1  16675.65       3   1 NA  16675.65  16675.65        3        NA        NA
-2 166757.36       5 985 NA 166757.36 166757.36        5        NA        NA
-
-
-library(stringr)
-
-ids <- c(1,542)
-test$dissolve <- 0
-test$dissolve <- factor(test$dissolve, levels=c(0,1))
-test[test$fid==ids,"dissolve"] <- 1
-
-test.dissolve <- test$dissolve
-test.union <- unionSpatialPolygons(test, test$dissolve)
-test.df <- as(test,"data.frame")
-neighbors <- paste(test.df[test$dissolve==1,]$neighbors,collapse=",")
-neighbors <- unique(str_split(neighbors, ","))
-
-test.df.agg <- aggregate(test.df[, 2:5], list(test.id), mean)
-
-
-
 
 test2 <- function(rast){
   test <- function(x, rast){
