@@ -36,16 +36,31 @@ library(rgdal)
 library(rgeos)
 library(stringr)
 library(maptools)
+#library(foreach)
+#library(doParallel)
+#library(parallel)
+library(future)
+
+#cores <- detectCores()
+#registerDoParallel(cores)
+plan(multisession)
 
 vect <- readOGR(dsn = "./vect", layer = "vect_10_corr")
 neighbours <- gTouches(vect, returnDense=FALSE, byid=TRUE)
 neighbours <- sapply(neighbours,paste,collapse=",")
 vect$neighbors <- neighbours
+vect$DN <- as.numeric(vect$DN)
+vect$area <- abs(vect$area)
+vect$intArea <- abs(vect$intArea)
 
-ids <- 1:400
-test <- vect[(vect$fid %in% ids),]
+#ids <- 1:400
+#test <- vect[(vect$fid %in% ids),]
+test <- vect
+
 c <- 1
+time <- Sys.time()
 repeat{
+  time <- Sys.time()
   if(c>=1000){
     break
   }
@@ -63,14 +78,39 @@ repeat{
   test[test$fid %in% ids,"dissolve"] <- ids[1]
   test.dissolve <- test$dissolve
   
-  test.union <- unionSpatialPolygons(test, test$dissolve)
+  
   test.df <- as(test,"data.frame")
+  
+  #test.union <- unionSpatialPolygons(test, test$dissolve)  
+  #test.df.agg <- aggregate(test.df[, c("DN", "area", "intArea","intValue")], list(test.dissolve), mean)
+  
+  union_f <- future({
+    unionSpatialPolygons(test, test$dissolve)
+  })
+  
+  df.agg_f <- future({
+    aggregate(test.df[, c("DN", "area", "intArea","intValue")], list(test.dissolve), mean)
+  })
+  
   neighbors <- paste(test.df[test$dissolve==ids[1],]$neighbors,collapse=",")
   neighbors <- unique(str_split(neighbors, ","))[[1]]
   neighbors <- neighbors[!(neighbors %in% ids)]
   neighbors <- paste(neighbors, collapse = ",")
-    
-  test.df.agg <- aggregate(test.df[, c("DN", "area", "intArea","intValue")], list(test.dissolve), mean)
+  
+  
+  test.union <- value(union_f)
+  test.df.agg <- value(df.agg_f)
+  
+  #aggregate <- foreach (i=1:2, .packages = "rgeos") %dopar% {
+  #  if(i==1){
+  #    unionSpatialPolygons(test, test$dissolve)  
+  #    }else{
+  #      aggregate(test.df[, c("DN", "area", "intArea","intValue")], list(test.dissolve), mean)
+  #  }
+  #}
+  #test.union <- aggregate[[1]]  
+  #test.df.agg <- aggregate[[2]]
+  
   row.names(test.df.agg) <- as.character(test.df.agg$Group.1)
   colnames(test.df.agg)[1] <- "fid"
   test.df.agg$neighbors <- test$neighbors[test$fid!=ids[2]]
@@ -87,8 +127,12 @@ repeat{
   test.min.neighbors.min <- NULL
   test.min.neighbors <- NULL
   test.min <- NULL
-  
+  #print(nrow(test))
   c <- c+1
+  #if(c%%10==0){
+    print(paste(Sys.time()-time, c,nrow(test), sep="-"))
+    #print(c)
+  #}
 }
 
 test2 <- function(rast){
