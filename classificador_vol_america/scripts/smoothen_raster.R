@@ -55,19 +55,36 @@ vect$area <- abs(vect$area)
 #test <- vect[(vect$fid %in% ids),]
 test <- vect
 #test$dissolve <- 0
+test.excl <- NULL
+
 
 c <- 1
 time <- Sys.time()
 repeat{
-  time <- Sys.time()
+  #time <- Sys.time()
   
   #!
   test.min <- test[which.min(test$area),]
   if(test.min$area >= 60000){
     break
   }
+  
   test.min.neighbors <- test[test$fid %in% str_split(test.min$neighbors, ",")[[1]],]
   test.min.neighbors.min <- test.min.neighbors[which.min(test.min.neighbors$area),]
+  
+  
+  
+  if(nrow(test.min.neighbors) ==0){
+    print(paste(c, "NO NEIGHBORS", test.min$fid, sep="-"))
+    if(is.null(test.excl)){
+      test.excl <- test.min
+    } else{
+      test.excl <- rbind(test.excl, test.min)
+    }
+    test <- test[test$fid != test.min$fid,]
+    c <- c+1
+    next
+  }
   
   #test$dissolve <- test$fid
   #test$dissolve <- factor(test$dissolve, levels=unique(test$fid))
@@ -79,11 +96,18 @@ repeat{
     print("ALARM! test.min.neighbors.min > 1")
     stop()
   }
+  
   ids <- c(toString(test.min$fid), toString(test.min.neighbors.min$fid))
+  
   if(length(ids) > 2){
     print("ALARM! ids > 2")
     stop()
   }
+  
+  #if(!any(test.min.neighbors$fid %in% test.excl$fid)){
+  #  print("¡¡¡ALARM!!")
+  #  break
+  #}
   
   #rest_f <- future({
   #  #!  
@@ -167,6 +191,7 @@ repeat{
   
   #test <- test.join
   test <- rbind(test.rest, test.shp.agg)
+  #test.excl <- test.excl[test.excl$fid!=ids[2],]
   
   test.rest <- NULL
   test.shp.agg <- NULL
@@ -182,15 +207,31 @@ repeat{
   neighbors <- NULL
   #print(nrow(test))
   c <- c+1
-  #if(c%%10==0){
-  print(paste(Sys.time()-time, c, nrow(test), sep="-"))
-  #print(c)
-  #}
+  if(c%%50==0){
+    print(paste(Sys.time()-time, c, nrow(test), sep="-"))
+    time <- Sys.time()
+  }
   if(c%%100==0){
-    writeOGR(vect, "./bkp", "smoothen_bkp", driver = "ESRI Shapefile")
-    break
+    if(!is.null(test.excl)){
+      test.towrite <- rbind(test,test.excl)
+      test.towrite$area <- round(test.towrite$area,2)
+      writeOGR(test.towrite, "./classificador_vol_america/vect/bkp", "smoothen_bkp", driver = "ESRI Shapefile", overwrite_layer = TRUE)  
+      rm(test.towrite)
+    }else{
+      test.towrite <- test
+      test.towrite$area <- round(test.towrite$area,2)
+      writeOGR(test.towrite, "./classificador_vol_america/vect/bkp", "smoothen_bkp", driver = "ESRI Shapefile", overwrite_layer = TRUE)
+      rm(test.towrite)
+    }
   }
 }
+
+test.towrite <- rbind(test,test.excl)
+test.towrite$area <- round(test.towrite$area,2)
+writeOGR(test.towrite, "./classificador_vol_america/vect", "smoothen", driver = "ESRI Shapefile", overwrite_layer = TRUE)  
+rm(test.towrite)
+
+
 
 test2 <- function(rast){
   test <- function(x, rast){
@@ -227,18 +268,3 @@ test3 <- function(){
 }
 
 
-
-fid DN      area   intArea intValue dissolved                                     neighbors dissolve
-0   1  3  16675.65  16675.65        3         0                                     336,46245        0
-1   2  3  50026.97  50026.97        3         0 3,4,229,230,336,45912,45913,46138,46139,46245        0
-2   3  5  16675.65  16675.65        5         0                               2,4,45911,45913        0
-3   4  7  33351.31  33351.31        7         0 2,3,229,230,831,45911,45912,46138,46139,46740        0
-4   5  4 116729.60 116729.60        4         0                   6,831,834,45915,46740,46743        0
-5   6  7  50026.98  50026.98        7         0                     5,7,834,45914,45916,46743        0
-
-fid  DN     area  intArea intValue
-1   1 5.5 258505.3 258505.3      5.5
-neighbors
-1 37978,38118,38120,38380,38460,38529,38601,38602,38671,38911,38925,83887,84027,84029,84289,84369,84438,84510,84511,84820,84834,38461,38925,84834
-dissolve
-1        0
