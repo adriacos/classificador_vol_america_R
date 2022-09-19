@@ -60,9 +60,7 @@ c <- 1
 time <- Sys.time()
 repeat{
   time <- Sys.time()
-  if(c>=1000){
-    break
-  }
+  
   #!
   test.min <- test[which.min(test$area),]
   if(test.min$area >= 60000){
@@ -188,6 +186,10 @@ repeat{
   print(paste(Sys.time()-time, c, nrow(test), sep="-"))
   #print(c)
   #}
+  if(c%%100==0){
+    writeOGR(vect, "./bkp", "smoothen_bkp", driver = "ESRI Shapefile")
+    break
+  }
 }
 
 test2 <- function(rast){
