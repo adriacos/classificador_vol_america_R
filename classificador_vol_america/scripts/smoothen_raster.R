@@ -49,22 +49,17 @@ vect$neighbors <- neighbours
 rm(neighbours)
 vect$DN <- as.numeric(vect$DN)
 vect$area <- abs(vect$area)
-#vect$intArea <- abs(vect$intArea)
 
-#ids <- 1:400
-#test <- vect[(vect$fid %in% ids),]
+
 test <- vect
-#test$dissolve <- 0
-#test.excl <- NULL
 test$ids_merged <- NA
 
 c <- 1
 time <- Sys.time()
 repeat{
-  #time <- Sys.time()
   
-  #!
   test.min <- test[which.min(test$area),]
+
   if(test.min$area >= 60000){
     break
   }
@@ -72,18 +67,14 @@ repeat{
   test.min.neighbors <- test[test$fid %in% str_split(test.min$neighbors, ",")[[1]],]
   test.min.neighbors.min <- test.min.neighbors[which.min(test.min.neighbors$area),]
   
-  
-  
-  
+
   
   if(nrow(test.min.neighbors)==0){
-    #print(paste(c, "NO NEIGHBORS found", test.min$fid, sep="-"))
-    #break
-    
+
     merged <- test[!is.na(test$ids_merged),]
-    #m <- str_split(merged$ids_merged, ",")
-    #n <- str_split(test.min$neighbors, ",")[[1]]
-    s <- sapply(m,function(m){length(intersect(str_split(merged$ids_merged, ","),str_split(test.min$neighbors, ",")[[1]]))})
+    m <- str_split(merged$ids_merged, ",")
+    n <- str_split(test.min$neighbors, ",")[[1]]
+    s <- sapply(m,function(m){length(intersect(m,n))})
     test.min.neighbors <- merged[s==1,]
     test.min.neighbors.min <- test.min.neighbors[which.min(test.min.neighbors$area),]
     
@@ -93,20 +84,8 @@ repeat{
       print(paste(c, "NO NEIGHBORS", test.min$fid, sep="-"))
       break
     }
-    print(paste(c, "NEIGHBORS FOUND, EVERYTHING ok", test.min$fid, sep="-"))
-    
-    #if(is.null(test.excl)){
-    #  test.excl <- test.min
-    #} else{
-    #  test.excl <- rbind(test.excl, test.min)
-    #}
-    #test <- test[test$fid != test.min$fid,]
-    #c <- c+1
-    #next
   }
   
-  #test$dissolve <- test$fid
-  #test$dissolve <- factor(test$dissolve, levels=unique(test$fid))
   if(nrow(test.min) > 1){
     print("ALARM! test.min > 1")
     stop()
@@ -123,48 +102,22 @@ repeat{
     stop()
   }
   
-  #if(!any(test.min.neighbors$fid %in% test.excl$fid)){
-  #  print("¡¡¡ALARM!!")
-  #  break
-  #}
-  
-  #rest_f <- future({
-  #  #!  
-  #  test[!(test$fid %in% ids),]
-  #})
-  
-  
-  #test[test$fid %in% ids,"dissolve"] <- ids[1]
-  #test.dissolve <- test$dissolve
   test.toagg <- test[test$fid %in% ids,]
   
-  
-  #test.toagg$dissolve <- 1
   test.df <- as(test.toagg,"data.frame")
   
-  ##test.union <- unionSpatialPolygons(test, test$dissolve)  
-  ##test.df.agg <- aggregate(test.df[, c("DN", "area", "intArea","intValue")], list(test.dissolve), mean)
-  
-  #test.toagg$dissolve <- 1
-  #union_f <- future({
-  #!  
-  
   test.union <- unionSpatialPolygons(test.toagg, c(row.names(test.df)[1],row.names(test.df)[1]))
-  #})
-  
-  #df.agg_f <- future({
-  #test.df.agg <- aggregate(test.df[, c("DN")], list(test.toagg$dissolve), mean)
-  #})
-  
-  #neighbors <- paste(test.df[test$dissolve==ids[1],]$neighbors,collapse=",")
-  
+
   neighbors <- paste(test.df$neighbors,collapse=",")
   neighbors <- unique(str_split(neighbors, ","))[[1]]
   neighbors <- neighbors[!(neighbors %in% ids)]
   neighbors <- paste(neighbors, collapse = ",")
   area <- sum(test.df$area)
   DN <- mean(test.df$DN)
-  ids_merged <- test.df$ids_merged[1]
+  ids_merged <- paste(test.df$ids_merged[!is.na(test.df$ids_merged)],collapse=",")
+  if(ids_merged==""){
+    ids_merged <- NA
+  }
   test.df <- test.df[1,]
   test.df$DN <- DN
   test.df$neighbors <- neighbors
@@ -174,53 +127,20 @@ repeat{
   if(is.na(ids_merged)){
     test.df$ids_merged <- ids[2]
   } else{
-    test.df$ids_merged <- append(ids_merged,ids[2])
+    test.df$ids_merged <- paste(ids_merged,ids[2],sep = ",")
   }
   
-  #row.names(test.df) <- ids[1]
-  
-  #test.union <- value(union_f)
-  #test.df.agg <- value(df.agg_f)
-  
-  ##aggregate <- foreach (i=1:2, .packages = "rgeos") %dopar% {
-  ##  if(i==1){
-  ##    unionSpatialPolygons(test, test$dissolve)  
-  ##    }else{
-  ##      aggregate(test.df[, c("DN", "area", "intArea","intValue")], list(test.dissolve), mean)
-  ##  }
-  ##}
-  ##test.union <- aggregate[[1]]  
-  ##test.df.agg <- aggregate[[2]]
-  
-  #row.names(test.df.agg) <- as.character(test.df.agg$Group.1)
-  #colnames(test.df.agg)[1] <- "fid"
-  
-  #test.df.agg$neighbors <- neighbors
   neighbors <- NULL
   area <- NULL
   DN <- NULL
   ids_merged <- NULL
-  #test.df.agg$dissolve <- 0
-  #test.df.agg$dissolved <- 0
-  #test.df.agg$neighbors <- test$neighbors[test$fid!=ids[2]]
-  #test.df.agg$neighbors[test.df.agg$fid==ids[1]] <- neighbors
-  
-  #test.shp.agg <- SpatialPolygonsDataFrame(test.union, test.df.agg)
+ 
   test.shp.agg <- SpatialPolygonsDataFrame(test.union, test.df)
   
-  
-  
-  #!
-  #test.rest <- value(rest_f)
   test.rest <- test[!(test$fid %in% ids),]
-  
-  #!
-  #test.join <- rbind(test.rest, test.shp.agg)
-  
-  #test <- test.join
+ 
   test <- rbind(test.rest, test.shp.agg)
-  #test.excl <- test.excl[test.excl$fid!=ids[2],]
-  
+
   test.rest <- NULL
   test.shp.agg <- NULL
   test.df.agg <- NULL
@@ -228,18 +148,17 @@ repeat{
   test.union <- NULL
   test.toagg <- NULL
   test.join <- NULL
-  #test.dissolve <- NULL
   test.min.neighbors.min <- NULL
   test.min.neighbors <- NULL
   test.min <- NULL
   neighbors <- NULL
-  #print(nrow(test))
+
   c <- c+1
-  if(c%%20==0){
+  if(c%%50==0){
     print(paste(as.numeric(difftime(Sys.time(),time,units="secs")), c, nrow(test), sep="-"))
     time <- Sys.time()
   }
-  if(c%%100==0){
+  if(c%%500==0){
     if(!is.null(test.excl)){
       test.towrite <- rbind(test,test.excl)
       test.towrite$area <- round(test.towrite$area,2)
@@ -259,6 +178,8 @@ test.towrite$area <- round(test.towrite$area,2)
 writeOGR(test.towrite, "./classificador_vol_america/vect", "smoothen", driver = "ESRI Shapefile", overwrite_layer = TRUE)  
 rm(test.towrite)
 
+
+45965
 
 
 test2 <- function(rast){

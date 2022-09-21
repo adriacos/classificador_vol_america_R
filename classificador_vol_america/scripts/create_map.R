@@ -1,11 +1,6 @@
 create_map <- function(lat, long){
 	
-#	if (!require("leaflet")){
-#		install.packages("leaflet")
-#	}
-#	if (!require("leaflet.opacity")){
-#		install.packages("leaflet.opacity")	
-#	}
+
 	library(leaflet)
 	library(leaflet.opacity)
 
@@ -41,7 +36,7 @@ create_map <- function(lat, long){
 	#m <- addOpacitySlider(m, layerId="1956")
 
 	#export_map(m)
-	
+
 	m <- addLayersControl(m, 
     		baseGroups = c("1956", "ortofoto", "base"),
     		#overlayGroups = c("Quakes", "Outline"),
