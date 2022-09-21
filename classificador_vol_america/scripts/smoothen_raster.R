@@ -73,17 +73,24 @@ repeat{
   test.min.neighbors.min <- test.min.neighbors[which.min(test.min.neighbors$area),]
   
   
+  
+  
+  
   if(nrow(test.min.neighbors)==0){
-    print(paste(c, "NO NEIGHBORS found", test.min$fid, sep="-"))
-    break
+    #print(paste(c, "NO NEIGHBORS found", test.min$fid, sep="-"))
+    #break
     
     merged <- test[!is.na(test$ids_merged),]
-    
-    test.min.neighbors <- merged[length(intesect(str_split(test$ids_merged, ","),str_split(test.min$neighbors, ",")[[1]]))>0,]
+    #m <- str_split(merged$ids_merged, ",")
+    #n <- str_split(test.min$neighbors, ",")[[1]]
+    s <- sapply(m,function(m){length(intersect(str_split(merged$ids_merged, ","),str_split(test.min$neighbors, ",")[[1]]))})
+    test.min.neighbors <- merged[s==1,]
     test.min.neighbors.min <- test.min.neighbors[which.min(test.min.neighbors$area),]
     
+    merged <- NULL
+    
     if(nrow(test.min.neighbors)==0){
-      print(paste(c, "NO NEIGHBORS found", test.min$fid, sep="-"))
+      print(paste(c, "NO NEIGHBORS", test.min$fid, sep="-"))
       break
     }
     print(paste(c, "NEIGHBORS FOUND, EVERYTHING ok", test.min$fid, sep="-"))
@@ -229,7 +236,7 @@ repeat{
   #print(nrow(test))
   c <- c+1
   if(c%%20==0){
-    print(paste(Sys.time()-time, c, nrow(test), sep="-"))
+    print(paste(as.numeric(difftime(Sys.time(),time,units="secs")), c, nrow(test), sep="-"))
     time <- Sys.time()
   }
   if(c%%100==0){
