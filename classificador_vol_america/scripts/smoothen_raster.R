@@ -41,7 +41,7 @@ library(future)
 #registerDoParallel(cores)
 plan(cluster)
 
-vect <- readOGR(dsn = "./vect", layer = "vect_10_corr")
+vect <- readOGR(dsn = "./classificador_vol_america/vect", layer = "vect_10_corr")
 #!
 neighbours <- gTouches(vect, returnDense=FALSE, byid=TRUE)
 neighbours <- sapply(neighbours,paste,collapse=",")
@@ -55,8 +55,8 @@ vect$area <- abs(vect$area)
 #test <- vect[(vect$fid %in% ids),]
 test <- vect
 #test$dissolve <- 0
-test.excl <- NULL
-
+#test.excl <- NULL
+test$ids_merged <- NA
 
 c <- 1
 time <- Sys.time()
@@ -73,17 +73,29 @@ repeat{
   test.min.neighbors.min <- test.min.neighbors[which.min(test.min.neighbors$area),]
   
   
-  
-  if(nrow(test.min.neighbors) ==0){
-    print(paste(c, "NO NEIGHBORS", test.min$fid, sep="-"))
-    if(is.null(test.excl)){
-      test.excl <- test.min
-    } else{
-      test.excl <- rbind(test.excl, test.min)
+  if(nrow(test.min.neighbors)==0){
+    print(paste(c, "NO NEIGHBORS found", test.min$fid, sep="-"))
+    break
+    
+    merged <- test[!is.na(test$ids_merged),]
+    
+    test.min.neighbors <- merged[length(intesect(str_split(test$ids_merged, ","),str_split(test.min$neighbors, ",")[[1]]))>0,]
+    test.min.neighbors.min <- test.min.neighbors[which.min(test.min.neighbors$area),]
+    
+    if(nrow(test.min.neighbors)==0){
+      print(paste(c, "NO NEIGHBORS found", test.min$fid, sep="-"))
+      break
     }
-    test <- test[test$fid != test.min$fid,]
-    c <- c+1
-    next
+    print(paste(c, "NEIGHBORS FOUND, EVERYTHING ok", test.min$fid, sep="-"))
+    
+    #if(is.null(test.excl)){
+    #  test.excl <- test.min
+    #} else{
+    #  test.excl <- rbind(test.excl, test.min)
+    #}
+    #test <- test[test$fid != test.min$fid,]
+    #c <- c+1
+    #next
   }
   
   #test$dissolve <- test$fid
@@ -145,11 +157,19 @@ repeat{
   neighbors <- paste(neighbors, collapse = ",")
   area <- sum(test.df$area)
   DN <- mean(test.df$DN)
+  ids_merged <- test.df$ids_merged[1]
   test.df <- test.df[1,]
   test.df$DN <- DN
   test.df$neighbors <- neighbors
   test.df$area <- area
   test.df$fid <- ids[1]
+  
+  if(is.na(ids_merged)){
+    test.df$ids_merged <- ids[2]
+  } else{
+    test.df$ids_merged <- append(ids_merged,ids[2])
+  }
+  
   #row.names(test.df) <- ids[1]
   
   #test.union <- value(union_f)
@@ -172,6 +192,7 @@ repeat{
   neighbors <- NULL
   area <- NULL
   DN <- NULL
+  ids_merged <- NULL
   #test.df.agg$dissolve <- 0
   #test.df.agg$dissolved <- 0
   #test.df.agg$neighbors <- test$neighbors[test$fid!=ids[2]]
@@ -207,7 +228,7 @@ repeat{
   neighbors <- NULL
   #print(nrow(test))
   c <- c+1
-  if(c%%50==0){
+  if(c%%20==0){
     print(paste(Sys.time()-time, c, nrow(test), sep="-"))
     time <- Sys.time()
   }
