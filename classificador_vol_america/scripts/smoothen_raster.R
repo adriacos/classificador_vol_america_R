@@ -1,17 +1,36 @@
 
+library(raster)
+library(SpaDES)
+library(rgdal)
+library(parallel)
 
-smoothen_raster <- function(rast){
-  library(raster)
-  library(SpaDES)library(rgdal)
+smoothen_raster <- function(fileName){
+  print(paste("smoothen_raster", fileName, Sys.time(),sep="-"))
+  rast <- raster(paste("./classificador_vol_america/rasters/", fileName, sep=""))
+  fileName <- sub(".tif","",fileName)
   raster_split <- splitRaster(rast, 10,10, buffer=c(2,2))
+  
+  n.cores <- detectCores()
+  if (n.cores > 10){
+    n.cores <- 10
+  }
+  clust <- makeCluster(n.cores)
+  clusterExport(clust, c("raster_split","smoothen_raster_"))
+  clusterEvalQ(clust, library(raster))
+  
   for(i in 1:10){
     print(paste("start ", i, Sys.time()))
-    
-    raster_split <- lapply(raster_split,smoothen_raster)
+    raster_split <- parLapply(clust, raster_split,smoothen_raster_)
+    #raster_split <- lapply(raster_split,smoothen_raster_)
     rast <- mergeRaster(raster_split)
-    writeRaster(rast,paste("classificador_vol_america/raster_recl_0.15_",i,".tif"), overwrite=TRUE)
+    writeRaster(rast,paste("./classificador_vol_america/rasters/",fileName,"/",filename,"_smth",i,".tif", sep=""), overwrite=TRUE)
     print(paste("end ", i, Sys.time()))
   }
+  rast <- rast*10
+  writeRaster(rast,paste("./classificador_vol_america/rasters/",filename,"_smth.tif", sep=""), overwrite=TRUE)
+  
+  stopCluster(clust)
+  
   rast
   #raster_recl <- mergeRaster(raster_split)
   #greyscale <- grey(seq(0, 1, length = 256))

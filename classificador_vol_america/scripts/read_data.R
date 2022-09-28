@@ -8,8 +8,14 @@ read_parcels <- function(){
   }
 }
 
+get_raster_names_done <- function(){
+  list.files("./classificador_vol_america/rasters", pattern = "\\.tif$")
+}
+
+
+
 get_parcels_done <- function(){
-  files <- list.files("./classificador_vol_america/rasters")
+  files <- get_raster_names_done()
   files <- substring(files,1,7)
   files
 }
