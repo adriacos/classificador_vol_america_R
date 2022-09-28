@@ -8,6 +8,10 @@ smoothen_raster <- function(fileName){
   print(paste("smoothen_raster", fileName, Sys.time(),sep="-"))
   rast <- raster(paste("./classificador_vol_america/rasters/", fileName, sep=""))
   fileName <- sub(".tif","",fileName)
+  
+  dir <- paste("./classificador_vol_america/rasters/",fileName, sep="")
+  dir.create(dir)
+  
   raster_split <- splitRaster(rast, 10,10, buffer=c(2,2))
   
   n.cores <- detectCores()
@@ -23,14 +27,17 @@ smoothen_raster <- function(fileName){
     raster_split <- parLapply(clust, raster_split,smoothen_raster_)
     #raster_split <- lapply(raster_split,smoothen_raster_)
     rast <- mergeRaster(raster_split)
-    writeRaster(rast,paste("./classificador_vol_america/rasters/",fileName,"/",filename,"_smth",i,".tif", sep=""), overwrite=TRUE)
+    
+    writeRaster(rast,paste(dir, "/", fileName, "_smth_", i, ".tif", sep=""), overwrite=TRUE)
     print(paste("end ", i, Sys.time()))
   }
-  rast <- rast*10
-  writeRaster(rast,paste("./classificador_vol_america/rasters/",filename,"_smth.tif", sep=""), overwrite=TRUE)
-  
   stopCluster(clust)
   
+  rast <- rast*10
+  res <- writeRaster(rast,paste("./classificador_vol_america/rasters/",fileName,"_smth.tif", sep=""), overwrite=TRUE)
+  if(exists("res")){
+    unlink(dir, recursive = TRUE)
+  }
   rast
   #raster_recl <- mergeRaster(raster_split)
   #greyscale <- grey(seq(0, 1, length = 256))
