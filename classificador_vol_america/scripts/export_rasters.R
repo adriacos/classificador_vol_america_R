@@ -1,16 +1,16 @@
-export_map <- function(m, parcel_id, municipality, province){
+export_map <- function(m, plot_id, municipality, province){
   print("export_map")
   
   library(htmlwidgets)
   library(webshot)
   library(png)
   library(raster)
-  
-  saveWidget(m, "leaflet_map.html", selfcontained = FALSE)
-  webshot("leaflet_map.html", file = "leaflet_map.png",
+  dir <- paste("./classificador_vol_america/leaflet_temp/leaflet_",plot_id,"_temp", sep="")
+  dir.create(dir)
+  saveWidget(m, paste(dir,"/leaflet_map.html", sep=""), selfcontained = FALSE)
+  webshot(paste(dir,"/leaflet_map.html", sep=""), file = paste(dir,"/leaflet_map.png", sep=""),
           cliprect = "viewport")
-  
-  img <- readPNG("leaflet_map.png")
+  img <- readPNG(paste(dir,"/leaflet_map.png", sep=""))
   
   img[img==1]=NA
   ar2mat <- matrix(img, nrow = nrow(img), ncol = ncol(img))
@@ -22,7 +22,8 @@ export_map <- function(m, parcel_id, municipality, province){
   
   plot(rast)
   extent(rast)
-  writeRaster(rast, paste("./classificador_vol_america/rasters/", parcel_id, "-", province, "-", municipality, ".tif", sep=""), format="GTiff", overwrite=TRUE)
+  writeRaster(rast, paste("./classificador_vol_america/rasters/", plot_id, "-", province, "-", municipality, ".tif", sep=""), format="GTiff", overwrite=TRUE)
+  unlink(dir, recursive = T)
 }
 
 

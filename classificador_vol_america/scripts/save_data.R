@@ -25,3 +25,14 @@ updateIFN_VA_Class <-function(register){
  
   write.csv(ifn_va_class, "data/ifn_va_class.csv", row.names = FALSE)
 }
+
+save_classified_vector <- function(name, vectors){
+  writeOGR(vectors, "./classificador_vol_america/vect/classified/", paste(name, "_class", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE) 
+}
+save_in_progress_classification_vector <- function(name, vectors){
+  writeOGR(vectors, "./classificador_vol_america/vect/classified/inprogress/", name, driver = "ESRI Shapefile", overwrite_layer = TRUE)
+}
+
+save_metrics_vector <- function(name, vectors){
+  writeOGR(vectors, "./classificador_vol_america/vect/metrics/", paste(name, "_mtcs", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE) 
+}

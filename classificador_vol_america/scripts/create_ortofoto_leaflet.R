@@ -1,5 +1,5 @@
-create_map <- function(lat, long){
-	print("create_map")
+create_ortofoto_leaflet <- function(lat, long){
+	print("create_ortofoto_leaflet")
 
 	library(leaflet)
 	library(leaflet.opacity)
