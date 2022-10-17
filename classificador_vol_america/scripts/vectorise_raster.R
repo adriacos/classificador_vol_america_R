@@ -10,7 +10,7 @@ vectorise_raster_by_url <- function(url){
 
 vectorise_raster <- function(rast){
   #to tera::spatRaster
-  rast <- rast(rat)
+  rast <- rast(rast)
   vect <- as.polygons(rast, dissolve=T)
   vect <- disagg(vect)
   area <- expanse(vect)

@@ -226,6 +226,7 @@ clump_vector <- function(name){
   vect.towrite <- vect
   #vect.towrite$area <- round(vect.towrite$area,2)
   vect.towrite <- vect.towrite[,c()]
+  vect.towrite$fid <- vect$id
   #vect.towrite <- vect.towrite[,-3]
   writeOGR(vect.towrite, dir, paste(name, "_clmp2", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)  
   rm(vect.towrite)
