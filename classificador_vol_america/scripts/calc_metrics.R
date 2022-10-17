@@ -159,7 +159,7 @@ calc_clumpiness_by_polygons_16_ <- function(id, vect, rast){
 
 calc_clumpiness_by_polygons_8_ <- function(id, vect, rast){
   r <- crop(rast, extent(vect[vect$id==id,]))
-  r <- mask(r,vect[vect$id==id,])
+  # r <- mask(r,vect[vect$id==id,])
   # if(length(r)>20000){
   #   cl <- calc_clumpiness_big_8(r)
   # }else {
