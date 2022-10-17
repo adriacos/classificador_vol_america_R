@@ -124,124 +124,13 @@ calc_neighbor_metrics_ <- function(id, vect){
 }
 
 
-# passar-li el número de cel·les adjacents com a paràmetre, per favor...
-calc_clumpiness_by_polygons_16 <- function(rast, vect){
-  ids <- vect[order(vect$are, decreasing = T),]$id
-  cl <- makeCluster(detectCores(), outfile="calc_metrics_log.txt")
-  clusterExport(cl, list("ids", "vect", "rast", "calc_clumpiness_by_polygons_16_", "calc_clumpiness_16", "calc_clumpiness_big_16"))
-  clusterEvalQ(cl, list(library(raster), library(SpaDES), library(parallel)))
-  ls <- parSapply(cl, ids, calc_clumpiness_by_polygons_16_, vect, rast)
-  stopCluster(cl)
-  ls
-}
+source("./classificador_vol_america/scripts/smoothen_raster.R")
+source("./classificador_vol_america/scripts/vectorise_raster.R")
+r_006 <- contrast_raster(rast, 0.06)
+v_006 <- vectorise_raster(r_006)
+library(sf)
+sf <- st_as_sf(v)
+sf_006 <- st_as_sf(v_006)
+int <- st_intersection(sf, sf_006)
 
-calc_clumpiness_by_polygons_8 <- function(rast, vect){
-  ids <- vect[order(vect$are, decreasing = T),]$id
-  cl <- makeCluster(detectCores(), outfile="calc_metrics_log.txt")
-  clusterExport(cl, list("ids", "vect", "rast", "calc_clumpiness_by_polygons_8_", "calc_clumpiness_8"))
-  clusterEvalQ(cl, list(library(raster), library(SpaDES), library(parallel)))
-  ls <- parSapply(cl, ids, calc_clumpiness_by_polygons_8_, vect, rast)
-  stopCluster(cl)
-  ls
-}
-
-calc_clumpiness_by_polygons_16_ <- function(id, vect, rast){
-  r <- crop(rast, extent(vect[vect$id==id,]))
-  r <- mask(r,vect[vect$id==id,])
-  # if(length(r)>20000){
-  #   cl <- calc_clumpiness_big_16(r)
-  # }else {
-    cl <- calc_clumpiness_16(r)
-  # }
-  print(id)
-  mean(values(cl), na.rm=T)
-}
-
-calc_clumpiness_by_polygons_8_ <- function(id, vect, rast){
-  r <- crop(rast, extent(vect[vect$id==id,]))
-  # r <- mask(r,vect[vect$id==id,])
-  # if(length(r)>20000){
-  #   cl <- calc_clumpiness_big_8(r)
-  # }else {
-  cl <- calc_clumpiness_8(r)
-  # }
-  print(id)
-  mean(values(cl), na.rm=T)
-}
-
-calc_clumpiness_big_16 <- function(r){
-  print("big")
-  dim <- ceiling(length(r)/10000)
-  dim = ceiling(sqrt(dim))
-  raster_split <- splitRaster(r, dim,dim, buffer=c(2,2))
-  n.cores <- detectCores()
-  clust <- makeCluster(n.cores)
-  clusterExport(clust, c("raster_split","calc_clumpiness_16"))
-  clusterEvalQ(clust, list(library(raster), library(SpaDES)))
-  raster_split <- parLapply(clust, raster_split,calc_clumpiness_16)
-  r <- mergeRaster(raster_split)
-  stopCluster(clust)
-  r
-}
-
-calc_clumpiness_16 <- function(rast){
-    calc_clumpiness__ <- function(x, rast){
-      adj <- adjacent(rast, x, 16, include=F)
-      m <- mean(abs(rast[adj[,2]]-rast[x]))
-      #m <- max(abs(rast[adj[,2]]-rast[x]))
-     #m <- mean(rast[adj[,2]][rast[adj[,2]]>rast[x]-0.15&rast[adj[,2]]<rast[x]+0.15], na.rm=TRUE)
-      m
-    }
-    cells <- cellFromRow(rast, c(1:nrow(rast)))
-    values(rast) <- sapply(cells, calc_clumpiness__, rast=rast)
-    rast
-}
-
-calc_clumpiness_8 <- function(rast){
-  calc_clumpiness__ <- function(x, rast){
-    adj <- adjacent(rast, x, 8, include=F)
-    m <- mean(abs(rast[adj[,2]]-rast[x]))
-    #m <- max(abs(rast[adj[,2]]-rast[x]))
-    #m <- mean(rast[adj[,2]][rast[adj[,2]]>rast[x]-0.15&rast[adj[,2]]<rast[x]+0.15], na.rm=TRUE)
-    m
-  }
-  cells <- cellFromRow(rast, c(1:nrow(rast)))
-  values(rast) <- sapply(cells, calc_clumpiness__, rast=rast)
-  rast
-}
-
-
-test_clump_vectorised <- function(){
-  name <- "P_00002-Barcelona-Bagà"
-  vect <- readOGR(paste("./classificador_vol_america/vect/vectorised/", name, ".shp", sep=""))
-  rast <- raster(paste("./classificador_vol_america/rasters/", name, ".tif", sep=""))
-  
-  vect$id <- as.numeric(row.names(vect))
-  if(vect[1,]$id==0){
-    vect$id <- vect$id +1
-  }
-  
-  sp_vect <- vect(vect)
-  vect$are <- expanse(sp_vect)
-  vect$per <- perim(sp_vect)
-  vect$shp <- (2*pi*sqrt(vect$are))/vect$per
-  rm(sp_vect)
-  
-  print("test_calc_clumpiness_16 INI")
-  print(Sys.time())
-  vect$clp_16 <- calc_clumpiness_by_polygons_16(rast, vect)
-  
-  writeOGR(vect, "./classificador_vol_america/vect/", paste(name, "_clumps_test_16", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE) 
-  
-  print("test_calc_clumpiness_16 END")
-  print(Sys.time())
-  
-  print("test_calc_clumpiness_8 INI")
-  print(Sys.time())
-  vect$clp_8 <- calc_clumpiness_by_polygons_8(rast, vect)
-  writeOGR(vect, "./classificador_vol_america/vect/", paste(name, "_clumps_test_8", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE) 
-  
-  print("test_calc_clumpiness_8 END")
-  print(Sys.time())
-}
 
