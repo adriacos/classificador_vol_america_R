@@ -5,6 +5,8 @@ library(stringr)
 library(maptools)
 library(exactextractr)
 library(raster)
+library(terra)
+
 clump_vector <- function(name){
   
   #name <- "vect_baga15"
@@ -18,14 +20,24 @@ clump_vector <- function(name){
   rast <- raster(paste("./classificador_vol_america/rasters/smoothen/", name, "_smth", ".tif", sep=""))
   
   
+  #treure àrea
+  v <- vect(vect)
+  vect$area <- expanse(vect)
+  rm(v)
+  
+  
   vect$id <- as.numeric(row.names(vect))
   if(vect[1,]$id==0){
     vect$id <- vect$id +1
   }
   
-  ex <- exact_extract(rast, vect, "stdev")
+  ex <- exact_extract(rast, vect, "stdev", na.rm=T)
   vect$sd <- ex
   vect[is.na(vect$sd),"sd"] <- 0
+  #treure DN
+  ex <- exact_extract(rast, vect, "mean", na.rm=T)
+  vect$DN <- ex
+  #vect[is.na(vect$DN),"DN"] <- 0
   rm(rast)
   gc()
   

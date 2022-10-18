@@ -1,4 +1,5 @@
 source("./classificador_vol_america/scripts/save_data.R")
+source("./classificador_vol_america/scripts/smoothen_raster.R")
 
 library(exactextractr)
 library(raster)
@@ -13,7 +14,7 @@ library(SpaDES)
 calc_metrics <- function(name, elev, pend, clima.mean_temp, clima.amp_term, clima.mean_prec, clima.reg_pluv){
   print("calc_metrics")
   print(Sys.time())
-  vect <- readOGR(paste("./classificador_vol_america/vect/clumped/", name, "_clmp2.shp", sep=""))
+  vect <- readOGR(paste("./classificador_vol_america/vect/clumped/", name, "_clmp.shp", sep=""))
   rast <- raster(paste("./classificador_vol_america/rasters/", name, ".tif", sep=""))
   
   vect$id <- as.numeric(row.names(vect))
@@ -76,23 +77,19 @@ calc_metrics <- function(name, elev, pend, clima.mean_temp, clima.amp_term, clim
   rm(sp_vect)
   
   #vect$clp_16 <- calc_clumpiness_by_polygons_16(rast, vect)
-  vect$clp_8 <- calc_clumpiness_by_polygons_8(rast, vect)
+  #vect$clp_8 <- calc_clumpiness_by_polygons_8(rast, vect)
   
-  #plot(vect$clp_16, vect$clp_8)
-  
-  #plot(vect$are, abs((vect$clp_16-vect$clp_8)))
+  print(Sys.time())
+  vect$rug <- calc_ruggedness(rast, vect, vect$are)
+  print(Sys.time())
+  vect$tpi <- calc_TPI(rast, vect)
+  print(Sys.time())
+  vect$tri <- calc_TPI(rast, vect)
+  print(Sys.time())
+  vect$rog <- calc_TPI(rast, vect)
+  print(Sys.time())
   
   rm(rast)
-  # clump <- calc_clumpiness(rast)
-  # #median en comptes de mean perquè, com que els marges entre polígons tenen valors molt alts, 
-  # #els polígons petits tenien valors anormalment alts
-  # ex <- exact_extract(clump, vect, "median")
-  # vect$clp <- ex
-  # rm(clump)
-  # rm(ex)
-  # gc()
-  
-  
   
   l <- lapply(vect$id, calc_neighbor_metrics_, vect)
   vect <- cbind(vect, do.call("rbind", l))
@@ -123,14 +120,29 @@ calc_neighbor_metrics_ <- function(id, vect){
                            "n_mn_std"=n_mn_std, "n_mn_slp"=n_mn_slp, "n_mn_shp"=n_mn_shp, "n_std_shp"=n_std_shp)))))
 }
 
+calc_ruggedness <- function(rast, vect, vect.area){
+  count_classes_by_polygons(vect, rast, 0.09)/vect.area
+}
 
-source("./classificador_vol_america/scripts/smoothen_raster.R")
-source("./classificador_vol_america/scripts/vectorise_raster.R")
-r_006 <- contrast_raster(rast, 0.06)
-v_006 <- vectorise_raster(r_006)
-library(sf)
-sf <- st_as_sf(v)
-sf_006 <- st_as_sf(v_006)
-int <- st_intersection(sf, sf_006)
+calc_roughness <- function(rast, vect){
+  calc_roughness_by_polygons(vect, rast)
+}
+
+calc_TPI <- function(rast, vect){
+  calc_TPI_by_polygons(vect, rast)
+}
+
+calc_TRI <- function(rast, vect){
+  calc_TRI_by_polygons(vect, rast)
+}
+
+# source("./classificador_vol_america/scripts/smoothen_raster.R")
+# source("./classificador_vol_america/scripts/vectorise_raster.R")
+# r_006 <- contrast_raster(rast, 0.06)
+# v_006 <- vectorise_raster(r_006)
+# library(sf)
+# sf <- st_as_sf(v)
+# sf_006 <- st_as_sf(v_006)
+# int <- st_intersection(sf, sf_006)
 
 

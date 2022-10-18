@@ -1,6 +1,7 @@
 library(terra)
 library(raster)
 library(rgdal)
+library(plyr)
 
 vectorise_raster_by_url <- function(url){
   print(url)
@@ -10,14 +11,15 @@ vectorise_raster_by_url <- function(url){
 
 vectorise_raster <- function(rast){
   #to tera::spatRaster
+  rast <- round_any(rast, 0.5)
   rast <- rast(rast)
-  vect <- as.polygons(rast, dissolve=T)
+  vect <- as.polygons(rast, dissolve=T, trunc=F)
   vect <- disagg(vect)
   area <- expanse(vect)
   #to sp: spatialPolygonsDataFrame
   vect <- as(vect, "Spatial")
-  names(vect)[1] <- "DN"
-  vect$area <- area
+  #names(vect)[1] <- "DN"
+  #vect$area <- area
   vect
 }
 
@@ -29,4 +31,8 @@ vectorise_save_smoothen_raster <- function(name){
 
 save_vectorised_raster <- function(vect, name){
   writeOGR(vect, "./classificador_vol_america/vect/vectorised", name, driver = "ESRI Shapefile", overwrite_layer = TRUE) 
+}
+
+vectorise_raster_ <- function(rast){
+  
 }
