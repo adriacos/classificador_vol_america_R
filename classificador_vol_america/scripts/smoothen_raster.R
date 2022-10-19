@@ -4,7 +4,7 @@ library(SpaDES)
 library(rgdal)
 library(parallel)
 
-smoothen_raster_dp <- function(name){
+smoothen_raster <- function(name){
   print(paste("smoothen_raster", name, Sys.time(),sep="-"))
 
   dir <- paste("./classificador_vol_america/rasters/smoothen/",name, sep="")
@@ -27,12 +27,12 @@ smoothen_raster_dp <- function(name){
   n.cores <- detectCores()
   
   clust <- makeCluster(n.cores)
-  clusterExport(clust, c("raster_split","smoothen_raster_dp_"), envir = environment())
+  clusterExport(clust, c("raster_split","smoothen_raster_"), envir = environment())
   clusterEvalQ(clust, library(raster))
 
   for(i in i_st:15){
     print(paste("start ", i, Sys.time()))
-    raster_split <- parLapply(clust, raster_split,smoothen_raster_dp_, seed=i)
+    raster_split <- parLapply(clust, raster_split,smoothen_raster_, seed=i)
     rast <- mergeRaster(raster_split)
     writeRaster(rast,paste(dir, "/", name, "_smth_", i, ".tif", sep=""), overwrite=TRUE)
     print(paste("end ", i, Sys.time()))
@@ -40,14 +40,14 @@ smoothen_raster_dp <- function(name){
   stopCluster(clust)
   
   rast <- rast*10
-  res <- writeRaster(rast,paste("./classificador_vol_america/rasters/smoothen/",name,"_smth_dp.tif", sep=""), overwrite=TRUE)
+  res <- writeRaster(rast,paste("./classificador_vol_america/rasters/smoothen/",name,"_smth.tif", sep=""), overwrite=TRUE)
   if(exists("res")){
-    #unlink(dir, recursive = TRUE)
+    unlink(dir, recursive = TRUE)
   }
   rast
 }
 
-smoothen_raster_dp_ <- function(rast, seed=8){
+smoothen_raster_ <- function(rast, seed=8){
   smoothen_raster__ <- function(x, rast){
     adj <- adjacent(rast, x, 8, include=TRUE)
     m <- mean(rast[adj[,2]][rast[adj[,2]]>rast[x]-0.15&rast[adj[,2]]<rast[x]+0.15], na.rm=TRUE)
@@ -63,7 +63,7 @@ smoothen_raster_dp_ <- function(rast, seed=8){
 }
 
 
-smoothen_raster <- function(name, threshold=0.15){
+smoothen_raster_dp <- function(name, threshold=0.15){
   print(paste("smoothen_raster", name, Sys.time(),sep="-"))
   
   rast <- raster(paste("./classificador_vol_america/rasters/", name, ".tif", sep=""))
@@ -73,10 +73,10 @@ smoothen_raster <- function(name, threshold=0.15){
   n.cores <- detectCores()
   
   clust <- makeCluster(n.cores, outfile="log_smoothen.txt")
-  clusterExport(clust, c("raster_split","smoothen_raster_"), envir =  environment())
+  clusterExport(clust, c("raster_split","smoothen_raster_dp_"), envir =  environment())
   clusterEvalQ(clust, library(raster))
   
-  raster_split <- parLapply(clust, raster_split,smoothen_raster_, threshold=threshold, seed=21)
+  raster_split <- parLapply(clust, raster_split,smoothen_raster_dp_, threshold=threshold, seed=21)
   rast_1 <- mergeRaster(raster_split)
   
   stopCluster(clust)
@@ -87,10 +87,10 @@ smoothen_raster <- function(name, threshold=0.15){
   n.cores <- detectCores()
   
   clust <- makeCluster(n.cores, outfile="log_smoothen.txt")
-  clusterExport(clust, c("raster_split","smoothen_raster_"), envir =  environment())
+  clusterExport(clust, c("raster_split","smoothen_raster_dp_"), envir =  environment())
   clusterEvalQ(clust, library(raster))
   
-  raster_split <- parLapply(clust, raster_split,smoothen_raster_, threshold=threshold, seed=4)
+  raster_split <- parLapply(clust, raster_split,smoothen_raster_dp_, threshold=threshold, seed=4)
   rast_2 <- mergeRaster(raster_split)
   
   stopCluster(clust)
@@ -101,10 +101,10 @@ smoothen_raster <- function(name, threshold=0.15){
   n.cores <- detectCores()
   
   clust <- makeCluster(n.cores, outfile="log_smoothen.txt")
-  clusterExport(clust, c("raster_split","smoothen_raster_"), envir =  environment())
+  clusterExport(clust, c("raster_split","smoothen_raster_dp_"), envir =  environment())
   clusterEvalQ(clust, library(raster))
   
-  raster_split <- parLapply(clust, raster_split,smoothen_raster_, threshold=threshold, seed=15)
+  raster_split <- parLapply(clust, raster_split,smoothen_raster_dp_, threshold=threshold, seed=15)
   rast_3 <- mergeRaster(raster_split)
   
   stopCluster(clust)
@@ -114,7 +114,7 @@ smoothen_raster <- function(name, threshold=0.15){
   rast <- mean(rast_1, rast_2, rast_3, na.rm=T)
   
   rast <- rast*10
-  res <- writeRaster(rast,paste("./classificador_vol_america/rasters/smoothen/",name,"_smth_mr_15.tif", sep=""), overwrite=TRUE)
+  res <- writeRaster(rast,paste("./classificador_vol_america/rasters/smoothen/",name,"_smth_dp.tif", sep=""), overwrite=TRUE)
   print(paste("smoothen_raster END", name, Sys.time(),sep="-"))
   rast
 }
@@ -123,7 +123,7 @@ smoothen_raster <- function(name, threshold=0.15){
 
 
 
-smoothen_raster_ <- function(rast, threshold=0.15, seed=8){
+smoothen_raster_dp_ <- function(rast, threshold=0.15, seed=8){
   set.seed(seed)
   cells <- cellFromRow(rast, c(1:nrow(rast)))
   cells <- sample(cells)

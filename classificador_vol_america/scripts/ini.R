@@ -10,42 +10,96 @@ source("./classificador_vol_america/scripts/vectorise_raster.R")
 source("./classificador_vol_america/scripts/calc_metrics.R")
 source("./classificador_vol_america/scripts/create_export_ortofoto_rasters.R")
 
+ini <- function(){
+  
+  #maximum number of parallel clump_vector that can be done. Theoretically equal 
+  #to the number of cores, but practically limited to 5 due to memory issues
+  #cores <- detectCores()
+  cores <- 5
+  
+  #done <- get_done_ids()
+  clumped <- get_clumped_ids()
+  if(length(clumped)>0){
+    res <- clumped%%cores
+    if(res==0){
+      clump_vectors_all()
+    }else{
+      
+    }
+  }else{
+    
+  }
+  
+}
 
-save_1956_ortofotos_to_rasters_all <- function(){
-  print("save_1956_rasters")
-  plots <- read_parcels()
+save_ortofotos_to_rasters <- function(){
+  done <- get_done_ids()
+  
+  ids <- read_quad_ids_not_exported(notin=done)
+  ids <- ids[1:100]
+  rm(done)
+  vects <- get_quad_vect(ids)
+  
+  coordinates <- get_EPSG_25831_vectors_centroids_lat_lng(vects)
+  lat <- coordinates[,2]
+  lng <- coordinates[,1]
+  rm(coordinates)
+  rm(vects)
+  
   cl <- makeCluster(detectCores())
-  clusterEvalQ(cl, list(source("./classificador_vol_america/scripts/create_map.R"), source("./classificador_vol_america/scripts/export_rasters.R")))
+  clusterEvalQ(cl, list(source("./classificador_vol_america/scripts/create_map.R"), source("./classificador_vol_america/scripts/export_rasters.R"
+                                        , source("./classificador_vol_america/scripts/create_export_ortofoto_rasters.R")
+                                        , source("./classificador_vol_america/scripts/read_data.R"))))
   clusterExport(cl, "plots", envir = environment())
-  clusterMap(cl, create_export_ortofoto_raster, plots$plot_id, plots$coords_latitude, plots$coords_longitude, plots$admin_municipality, plots$admin_province)
+  clusterMap(cl, create_export_ortofoto_raster, ids, lat, lng)
   #mcmapply(create_export_map, plots$plot_id, plots$coords_latitude, plots$coords_longitude, plots$admin_municipality, plots$admin_province)
   stopCluster(cl)
+  rm(lat)
+  rm(long)
+  
+  # 
+  # 
+  # print("save_1956_rasters")
+  # plots <- read_parcels()
+  # cl <- makeCluster(detectCores())
+  # clusterEvalQ(cl, list(source("./classificador_vol_america/scripts/create_map.R"), source("./classificador_vol_america/scripts/export_rasters.R")))
+  # clusterExport(cl, "plots", envir = environment())
+  # clusterMap(cl, create_export_ortofoto_raster, plots$plot_id, plots$coords_latitude, plots$coords_longitude, plots$admin_municipality, plots$admin_province)
+  # #mcmapply(create_export_map, plots$plot_id, plots$coords_latitude, plots$coords_longitude, plots$admin_municipality, plots$admin_province)
+  # stopCluster(cl)
 }
 
 smoothen_rasters_all <- function(){
-  files <- get_raster_names_done_not_smoothen()
-  sapply(files, smoothen_raster)
+  #ids <- get_raster_ids_done_not_smoothen()
+  ids <- get_exported_ids()
+  sapply(ids, smoothen_raster)
 }
 
 vectorise_rasters_all <- function(){
-  names <- get_raster_names_smoothen_done()
+  #ids <- get_raster_ids_smoothen_done()
+  ids <- get_smoothen_ids()
+  
   cl <- makeCluster(5, outfile="log.txt")
-  clusterExport(cl, c("names", "vectorise_save_smoothen_raster"), envir = environment())
+  clusterExport(cl, c("ids", "vectorise_save_smoothen_raster"), envir = environment())
   clusterEvalQ(cl, list(source("./classificador_vol_america/scripts/vectorise_raster.R"), library(raster), library(terra), library(rgdal)))
-  parLapply(cl, names, vectorise_save_smoothen_raster)
+  parLapply(cl, ids, vectorise_save_smoothen_raster)
   #vectorise_raster(rast)
   stopCluster(cl)
 }
 
 clump_vectors_all <- function(){
-    names <- get_names_smoothen_vectorised_not_clumped()
-  print(names)
-  names <- split(names, ceiling(seq_along(names)/5))
-  for(names_5 in names){
+  
+  #cores <- detectCores()
+  cores <- 5
+  #ids <- get_ids_smoothen_vectorised_not_clumped()
+  ids <- get_vectorised_ids()
+  print(ids)
+  ids <- split(ids, ceiling(seq_along(ids)/5))
+  for(ids_5 in ids){
     cl <- makeCluster(5, outfile="log.txt")
     clusterEvalQ(cl, list(source("./classificador_vol_america/scripts/clump_vector.R"), library(rgdal), library(rgeos), library(stringr), library(maptools)))
-    clusterExport(cl, c("names_5", "clump_vector"), envir = environment())
-    clusterMap(cl, clump_vector, names_5)
+    clusterExport(cl, c("ids_5", "clump_vector"), envir = environment())
+    clusterMap(cl, clump_vector, ids_5)
     stopCluster(cl)
   }
 }
@@ -58,13 +112,14 @@ calc_metrics_all <- function(){
   clima.mean_prec <- raster("C:/Users/acosd/Desktop/CREAF/Mapes/Clima/ATMOSFERA_ATLES6190_PPTANUAL/ATMOSFERA_ATLES6190_PPTANUAL_5mx5m.tif")
   clima.reg_pluv <- raster("C:/Users/acosd/Desktop/CREAF/Mapes/Clima/ATMOSFERA_ATLES6190_REGPLUVI/ATMOSFERA_ATLES6190_REGPLUVI_5mx5m.tif")
   
-  names <- get_vectors_clumped_file_names_not_metrics()
+  #ids <- get_vectors_clumped_file_ids_not_metrics()
+  ids <- get_clumped_ids()
   
-  print(names)
+  print(ids)
   
   cl <- makeCluster(5, outfile="log.txt")
-  clusterExport(cl, c("names", "calc_metrics", "elev", "pend", "clima.mean_temp","clima.amp_term","clima.mean_prec","clima.reg_pluv"), envir = environment())
+  clusterExport(cl, c("ids", "calc_metrics", "elev", "pend", "clima.mean_temp","clima.amp_term","clima.mean_prec","clima.reg_pluv"), envir = environment())
   clusterEvalQ(cl, list(source("./classificador_vol_america/scripts/calc_metrics.R"), library(raster), library(terra), library(rgdal)))
-  parLapply(cl, names, calc_metrics, elev, pend, clima.mean_temp,clima.amp_term,clima.mean_prec,clima.reg_pluv)
+  parLapply(cl, ids, calc_metrics, elev, pend, clima.mean_temp,clima.amp_term,clima.mean_prec,clima.reg_pluv)
   stopCluster(cl)
 }

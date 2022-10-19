@@ -1,5 +1,5 @@
 source("./classificador_vol_america/scripts/project.R")
-
+source("./classificador_vol_america/scripts/calc_metrics.R")
 
 
 library(rgdal)
@@ -24,25 +24,31 @@ clump_vector <- function(name){
   vect <- project_EPSG_25831_vect(vect)
   rast <- project_EPSG_25831_rast(rast)
   
-  
-  #treure àrea
-  v <- vect(vect)
-  vect$area <- expanse(v)
-  rm(v)
-  
-  
   vect$id <- as.numeric(row.names(vect))
   if(vect[1,]$id==0){
     vect$id <- vect$id +1
   }
   
-  ex <- exact_extract(rast, vect, "stdev")
-  vect$sd <- ex
-  vect[is.na(vect$sd),"sd"] <- 0
+  
+  #treure àrea
+  v <- vect(vect)
+  vect$area <- expanse(v)
+  vect$area <- abs(vect$area)
+  rm(v)
+  gc()
+  
+  
+  # ex <- exact_extract(rast, vect, "stdev")
+  # vect$sd <- ex
+  # vect[is.na(vect$sd),"sd"] <- 0
   #treure DN
   ex <- exact_extract(rast, vect, "mean")
   vect$DN <- ex
+  vect$DN <- as.numeric(vect$DN)
   #vect[is.na(vect$DN),"DN"] <- 0
+  rm(ex)
+  
+  vect$tpi <- calc_TPI(rast, vect)
   rm(rast)
   gc()
   
@@ -55,10 +61,7 @@ clump_vector <- function(name){
   vect$neighbors <- neighbours
   rm(neighbours)
   gc()
-  
-  vect$DN <- as.numeric(vect$DN)
-  vect$area <- abs(vect$area)
-  
+
   vect$toignore <- FALSE
   
   c <- 1
@@ -139,7 +142,7 @@ clump_vector <- function(name){
     vect.min.neighbors <- vect.min.neighbors[vect.min.neighbors$id!=vect.min$id,]
     
     vect.min.neighbors.min <- vect.min.neighbors[
-      which.min((abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
+      which.min((abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$tpi-vect.min$tpi))
       ,]
   
     if(first500 ==F && vect.min$area >= 200 && vect.min$area < 500 && abs(vect.min.neighbors.min$DN-vect.min$DN)>2){
@@ -193,19 +196,19 @@ clump_vector <- function(name){
     neighbors <- paste(neighbors, collapse = ",")
     area <- sum(vect.df$area)
     DN <- sum(vect.df$DN*(vect.df$area/area))
-    sd <- sum(vect.df$sd*(vect.df$area/area))
+    tpi <- sum(vect.df$tpi*(vect.df$area/area))
     
     vect.df <- vect.df[1,]
     vect.df$DN <- DN
     vect.df$neighbors <- neighbors
     vect.df$area <- area
     vect.df$id <- ids[1]
-    vect.df$sd <- sd
+    vect.df$tpi <- tpi
     
     neighbors <- NULL
     area <- NULL
     DN <- NULL
-    sd <- NULL
+    tpi <- NULL
     
     neighbors <- str_split(vect$neighbors, ",")
     neighbors <- lapply(neighbors, function(nb){nb[nb==ids[2]]<-ids[1]; nb})

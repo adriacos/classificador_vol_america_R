@@ -1,11 +1,14 @@
-export_map <- function(m, plot_id, municipality, province){
+source("./classificador_vol_america/scripts/project.R")
+
+
+export_map <- function(m, id){
   print("export_map")
   
   library(htmlwidgets)
   library(webshot)
   library(png)
   library(raster)
-  dir <- paste("./classificador_vol_america/leaflet_temp/leaflet_",plot_id,"_temp", sep="")
+  dir <- paste("./classificador_vol_america/leaflet_temp/leaflet_",id,"_temp", sep="")
   dir.create(dir)
   saveWidget(m, paste(dir,"/leaflet_map.html", sep=""), selfcontained = FALSE)
   webshot(paste(dir,"/leaflet_map.html", sep=""), file = paste(dir,"/leaflet_map.png", sep=""),
@@ -18,14 +21,17 @@ export_map <- function(m, plot_id, municipality, province){
   bbx <- getBox(m)
   rast = raster(ar2mat, xmn=bbx[1], xmx=bbx[2], ymn=bbx[3], ymx=bbx[4])
   ## Define the spatial reference system
-  proj4string(rast) <- CRS("+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs")
+  rast <- project_EPSG_25831_rast(rast)
+  #proj4string(rast) <- CRS("+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs")
   
-  plot(rast)
-  extent(rast)
-  writeRaster(rast, paste("./classificador_vol_america/rasters/", plot_id, "-", province, "-", municipality, ".tif", sep=""), format="GTiff", overwrite=TRUE)
+  #writeRaster(rast, paste("./classificador_vol_america/rasters/", id, "-", province, "-", municipality, ".tif", sep=""), format="GTiff", overwrite=TRUE)
   unlink(dir, recursive = T)
+  rast
 }
 
+save_map <- function(rast, id){
+  writeRaster(rast, paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""), format="GTiff", overwrite=TRUE)
+}
 
 getBox <- function(m){
   view <- m$x$options

@@ -10,6 +10,7 @@ library(parallel)
 library(rgdal)
 library(remotes)
 library(SpaDES)
+library(geosphere)
 
 calc_metrics <- function(name, elev, pend, clima.mean_temp, clima.amp_term, clima.mean_prec, clima.reg_pluv){
   print("calc_metrics")
@@ -80,7 +81,7 @@ calc_metrics <- function(name, elev, pend, clima.mean_temp, clima.amp_term, clim
 
   vect$tpi <- calc_TPI(rast, vect)
 
-  vect$tri <- calc_TRI(rast, vect)
+  #vect$tri <- calc_TRI(rast, vect)
 
   #vect$rog <- calc_roughness(rast, vect)
   
