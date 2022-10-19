@@ -17,12 +17,12 @@ clump_vector <- function(name){
   # dir.create(dir_bkp)
   
   vect <- readOGR(paste("./classificador_vol_america/vect/vectorised/", name, ".shp", sep=""))
-  rast <- raster(paste("./classificador_vol_america/rasters/smoothen/", name, "_smth", ".tif", sep=""))
+  rast <- raster(paste("./classificador_vol_america/rasters/", name, ".tif", sep=""))
   
   
   #treure àrea
   v <- vect(vect)
-  vect$area <- expanse(vect)
+  vect$area <- expanse(v)
   rm(v)
   
   
@@ -31,11 +31,11 @@ clump_vector <- function(name){
     vect$id <- vect$id +1
   }
   
-  ex <- exact_extract(rast, vect, "stdev", na.rm=T)
+  ex <- exact_extract(rast, vect, "stdev")
   vect$sd <- ex
   vect[is.na(vect$sd),"sd"] <- 0
   #treure DN
-  ex <- exact_extract(rast, vect, "mean", na.rm=T)
+  ex <- exact_extract(rast, vect, "mean")
   vect$DN <- ex
   #vect[is.na(vect$DN),"DN"] <- 0
   rm(rast)

@@ -4,10 +4,10 @@ library(SpaDES)
 library(rgdal)
 library(parallel)
 
-contrast_raster_dp <- function(name){
-  print(paste("contrast_raster", name, Sys.time(),sep="-"))
+smoothen_raster_dp <- function(name){
+  print(paste("smoothen_raster", name, Sys.time(),sep="-"))
 
-  dir <- paste("./classificador_vol_america/rasters/contrast/",name, sep="")
+  dir <- paste("./classificador_vol_america/rasters/smoothen/",name, sep="")
   
   i_st <- 1
   rast <- raster(paste("./classificador_vol_america/rasters/", name, ".tif", sep=""))
@@ -27,28 +27,28 @@ contrast_raster_dp <- function(name){
   n.cores <- detectCores()
   
   clust <- makeCluster(n.cores)
-  clusterExport(clust, c("raster_split","contrast_raster_dp_"), envir = environment())
+  clusterExport(clust, c("raster_split","smoothen_raster_dp_"), envir = environment())
   clusterEvalQ(clust, library(raster))
 
   for(i in i_st:15){
     print(paste("start ", i, Sys.time()))
-    raster_split <- parLapply(clust, raster_split,contrast_raster_dp_, seed=i)
+    raster_split <- parLapply(clust, raster_split,smoothen_raster_dp_, seed=i)
     rast <- mergeRaster(raster_split)
-    writeRaster(rast,paste(dir, "/", name, "_cntr_", i, ".tif", sep=""), overwrite=TRUE)
+    writeRaster(rast,paste(dir, "/", name, "_smth_", i, ".tif", sep=""), overwrite=TRUE)
     print(paste("end ", i, Sys.time()))
   }
   stopCluster(clust)
   
   rast <- rast*10
-  res <- writeRaster(rast,paste("./classificador_vol_america/rasters/contrast/",name,"_cntr_dp.tif", sep=""), overwrite=TRUE)
+  res <- writeRaster(rast,paste("./classificador_vol_america/rasters/smoothen/",name,"_smth_dp.tif", sep=""), overwrite=TRUE)
   if(exists("res")){
     #unlink(dir, recursive = TRUE)
   }
   rast
 }
 
-contrast_raster_dp_ <- function(rast, seed=8){
-  contrast_raster__ <- function(x, rast){
+smoothen_raster_dp_ <- function(rast, seed=8){
+  smoothen_raster__ <- function(x, rast){
     adj <- adjacent(rast, x, 8, include=TRUE)
     m <- mean(rast[adj[,2]][rast[adj[,2]]>rast[x]-0.15&rast[adj[,2]]<rast[x]+0.15], na.rm=TRUE)
     m
@@ -58,13 +58,13 @@ contrast_raster_dp_ <- function(rast, seed=8){
   cells <- cellFromRow(rast, c(1:nrow(rast)))
   cells <- sample(cells)
   
-  values(rast)[cells] <- sapply(cells, contrast_raster__, rast=rast)
+  values(rast)[cells] <- sapply(cells, smoothen_raster__, rast=rast)
   rast
 }
 
 
-contrast_raster <- function(name, threshold=0.15){
-  print(paste("contrast_raster", name, Sys.time(),sep="-"))
+smoothen_raster <- function(name, threshold=0.15){
+  print(paste("smoothen_raster", name, Sys.time(),sep="-"))
   
   rast <- raster(paste("./classificador_vol_america/rasters/", name, ".tif", sep=""))
   
@@ -72,11 +72,11 @@ contrast_raster <- function(name, threshold=0.15){
   
   n.cores <- detectCores()
   
-  clust <- makeCluster(n.cores, outfile="log_contrast.txt")
-  clusterExport(clust, c("raster_split","contrast_raster_"), envir =  environment())
+  clust <- makeCluster(n.cores, outfile="log_smoothen.txt")
+  clusterExport(clust, c("raster_split","smoothen_raster_"), envir =  environment())
   clusterEvalQ(clust, library(raster))
   
-  raster_split <- parLapply(clust, raster_split,contrast_raster_, threshold=threshold, seed=21)
+  raster_split <- parLapply(clust, raster_split,smoothen_raster_, threshold=threshold, seed=21)
   rast_1 <- mergeRaster(raster_split)
   
   stopCluster(clust)
@@ -86,11 +86,11 @@ contrast_raster <- function(name, threshold=0.15){
   
   n.cores <- detectCores()
   
-  clust <- makeCluster(n.cores, outfile="log_contrast.txt")
-  clusterExport(clust, c("raster_split","contrast_raster_"), envir =  environment())
+  clust <- makeCluster(n.cores, outfile="log_smoothen.txt")
+  clusterExport(clust, c("raster_split","smoothen_raster_"), envir =  environment())
   clusterEvalQ(clust, library(raster))
   
-  raster_split <- parLapply(clust, raster_split,contrast_raster_, threshold=threshold, seed=4)
+  raster_split <- parLapply(clust, raster_split,smoothen_raster_, threshold=threshold, seed=4)
   rast_2 <- mergeRaster(raster_split)
   
   stopCluster(clust)
@@ -100,11 +100,11 @@ contrast_raster <- function(name, threshold=0.15){
   
   n.cores <- detectCores()
   
-  clust <- makeCluster(n.cores, outfile="log_contrast.txt")
-  clusterExport(clust, c("raster_split","contrast_raster_"), envir =  environment())
+  clust <- makeCluster(n.cores, outfile="log_smoothen.txt")
+  clusterExport(clust, c("raster_split","smoothen_raster_"), envir =  environment())
   clusterEvalQ(clust, library(raster))
   
-  raster_split <- parLapply(clust, raster_split,contrast_raster_, threshold=threshold, seed=15)
+  raster_split <- parLapply(clust, raster_split,smoothen_raster_, threshold=threshold, seed=15)
   rast_3 <- mergeRaster(raster_split)
   
   stopCluster(clust)
@@ -114,8 +114,8 @@ contrast_raster <- function(name, threshold=0.15){
   rast <- mean(rast_1, rast_2, rast_3, na.rm=T)
   
   rast <- rast*10
-  res <- writeRaster(rast,paste("./classificador_vol_america/rasters/contrast/",name,"_cntr_mr_15.tif", sep=""), overwrite=TRUE)
-  print(paste("contrast_raster END", name, Sys.time(),sep="-"))
+  res <- writeRaster(rast,paste("./classificador_vol_america/rasters/smoothen/",name,"_smth_mr_15.tif", sep=""), overwrite=TRUE)
+  print(paste("smoothen_raster END", name, Sys.time(),sep="-"))
   rast
 }
 
@@ -123,7 +123,7 @@ contrast_raster <- function(name, threshold=0.15){
 
 
 
-contrast_raster_ <- function(rast, threshold=0.15, seed=8){
+smoothen_raster_ <- function(rast, threshold=0.15, seed=8){
   set.seed(seed)
   cells <- cellFromRow(rast, c(1:nrow(rast)))
   cells <- sample(cells)
@@ -159,7 +159,7 @@ count_classes_by_polygons <- function(vect, rast, threshold){
   
   n.cores <- detectCores()
 
-  clust <- makeCluster(n.cores, outfile="log_contrast.txt")
+  clust <- makeCluster(n.cores, outfile="log_smoothen.txt")
   clusterExport(clust, c("ids", "vect","vect", "threshold", "count_classes_by_polygons_", "count_classes_by_polygon", "count_classes"), envir =  environment())
   clusterEvalQ(clust, library(raster))
   c <- parSapply(clust, ids, count_classes_by_polygons_, vect, rast, threshold)
@@ -221,7 +221,7 @@ calc_TPI_by_polygons <- function(vect, rast){
   
   n.cores <- detectCores()
   
-  clust <- makeCluster(n.cores, outfile="log_contrast.txt")
+  clust <- makeCluster(n.cores, outfile="log_smoothen.txt")
   clusterExport(clust, c("ids", "vect","rast", "calc_TPI_by_polygons_", "calc_TPI_by_polygon", "calc_TPI_raster"), envir =  environment())
   clusterEvalQ(clust, library(raster))
   c <- parSapply(clust, ids, calc_TPI_by_polygons_, vect, rast)
@@ -268,7 +268,7 @@ calc_TRI_by_polygons <- function(vect, rast){
   
   n.cores <- detectCores()
   
-  clust <- makeCluster(n.cores, outfile="log_contrast.txt")
+  clust <- makeCluster(n.cores, outfile="log_smoothen.txt")
   clusterExport(clust, c("ids", "vect","rast", "calc_TRI_by_polygons_", "calc_TRI_by_polygon", "calc_TRI_raster"), envir =  environment())
   clusterEvalQ(clust, library(raster))
   c <- parSapply(clust, ids, calc_TRI_by_polygons_, vect, rast)
@@ -315,7 +315,7 @@ calc_roughness_by_polygons <- function(vect, rast){
   
   n.cores <- detectCores()
   
-  clust <- makeCluster(n.cores, outfile="log_contrast.txt")
+  clust <- makeCluster(n.cores, outfile="log_smoothen.txt")
   clusterExport(clust, c("ids", "vect","rast", "calc_roughness_by_polygons_", "calc_roughness_by_polygon", "calc_roughness_raster"), envir =  environment())
   clusterEvalQ(clust, library(raster))
   c <- parSapply(clust, ids, calc_roughness_by_polygons_, vect, rast)
