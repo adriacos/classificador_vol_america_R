@@ -11,11 +11,11 @@ vectorise_raster_by_url <- function(url){
 
 vectorise_raster <- function(rast){
   #to tera::spatRaster
-  rast <- round_any(rast, 0.5)
+  values(rast) <- round_any(values(rast), 0.5)
   rast <- rast(rast)
   vect <- as.polygons(rast, dissolve=T, trunc=F)
   vect <- disagg(vect)
-  area <- expanse(vect)
+  #area <- expanse(vect)
   #to sp: spatialPolygonsDataFrame
   vect <- as(vect, "Spatial")
   #names(vect)[1] <- "DN"
