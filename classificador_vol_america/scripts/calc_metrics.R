@@ -76,18 +76,13 @@ calc_metrics <- function(name, elev, pend, clima.mean_temp, clima.amp_term, clim
   vect$shp <- (2*pi*sqrt(vect$are))/vect$per
   rm(sp_vect)
   
-  #vect$clp_16 <- calc_clumpiness_by_polygons_16(rast, vect)
-  #vect$clp_8 <- calc_clumpiness_by_polygons_8(rast, vect)
-  
-  print(Sys.time())
-  vect$rug <- calc_ruggedness(rast, vect, vect$are)
-  print(Sys.time())
+  #vect$rug <- calc_ruggedness(rast, vect, vect$are)
+
   vect$tpi <- calc_TPI(rast, vect)
-  print(Sys.time())
-  vect$tri <- calc_TPI(rast, vect)
-  print(Sys.time())
-  vect$rog <- calc_TPI(rast, vect)
-  print(Sys.time())
+
+  vect$tri <- calc_TRI(rast, vect)
+
+  #vect$rog <- calc_roughness(rast, vect)
   
   rm(rast)
   
@@ -110,6 +105,8 @@ calc_neighbor_metrics_ <- function(id, vect){
   
   n_mn_std <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$std, na.rm=T)
   
+  n_mn_tpi <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$tpi, na.rm=T)
+  
   n_mn_slp <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$slp, na.rm=T)
   n_std_slp <- sd(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$slp, na.rm=T)
   
@@ -117,7 +114,7 @@ calc_neighbor_metrics_ <- function(id, vect){
   n_std_shp <- sd(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$shp, na.rm=T)
   
   return(data.frame(t(unlist(list("n_mn_mn"=n_mn_mn,"n_sd_mn"=n_sd_mn, "n_mn_mdn"=n_mn_mdn, 
-                           "n_mn_std"=n_mn_std, "n_mn_slp"=n_mn_slp, "n_mn_shp"=n_mn_shp, "n_std_shp"=n_std_shp)))))
+                           "n_mn_std"=n_mn_std, "n_mn_slp"=n_mn_slp, "n_mn_shp"=n_mn_shp, "n_std_shp"=n_std_shp, "n_mn_tpi"=n_mn_tpi)))))
 }
 
 calc_ruggedness <- function(rast, vect, vect.area){

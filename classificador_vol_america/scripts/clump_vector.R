@@ -1,3 +1,6 @@
+source("./classificador_vol_america/scripts/project.R")
+
+
 
 library(rgdal)
 library(rgeos)
@@ -18,6 +21,8 @@ clump_vector <- function(name){
   
   vect <- readOGR(paste("./classificador_vol_america/vect/vectorised/", name, ".shp", sep=""))
   rast <- raster(paste("./classificador_vol_america/rasters/", name, ".tif", sep=""))
+  vect <- project_EPSG_25831_vect(vect)
+  rast <- project_EPSG_25831_rast(rast)
   
   
   #treure àrea
