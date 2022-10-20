@@ -1,11 +1,13 @@
 
-read_quad_ids_not_exported <- function(notin){
+source("./classificador_vol_america/scripts/project.R")
+
+read_quad_ids_not_exported <- function(notin=NULL){
   all <- read_quad_ids(notin)
   exported <- read_quad_ids_exported()
   all[!(all %in% exported)]
 }
 
-read_quad_ids <- function(notin){
+read_quad_ids <- function(notin=NULL){
   ids <- get_quad_vect()$id
   ids <- ids[!(ids %in% notin)]
   ids
@@ -13,24 +15,44 @@ read_quad_ids <- function(notin){
 
 get_quad_vect <- function(ids=NULL){
   if(is.null(ids)){
-    return(readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/1kmx1km_BCN.gpkg"))
-    #readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/1kmx1km_BCN.gpkg") 
+    if(dir.exists("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula")){
+      #return(reproject_EPSG_25831_vect(readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/1kmx1km_BCN.gpkg")))
+      return(readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/1kmx1km_BCN.gpkg"))
+    } else if(dir.exists("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula")){
+      #return(reproject_EPSG_25831_vect(readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/1kmx1km_BCN.gpkg")))
+      return(readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/1kmx1km_BCN.gpkg"))
+    }else {
+      print("ALARM - no quadricula directory found")
+      stop()
+    }
   }else{
-    vect <- readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/1kmx1km_BCN.gpkg")
-    #vect <- readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/1kmx1km_BCN.gpkg") 
-    return(vect[vect$id %in% ids,])
+    if(dir.exists("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula")){
+      vect <- readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/1kmx1km_BCN.gpkg")
+    } else if(dir.exists("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula")){
+      vect <- readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/1kmx1km_BCN.gpkg")
+    }else {
+      print("ALARM - no quadricula directory found")
+      stop()
+    }
+    vect <- vect[vect$id %in% ids,]
+    vect
+    #return(reproject_EPSG_25831_vect(vect))
   }
   
 }
 
 read_quad_ids_exported <- function(){
-  if (file.size("./classificador_vol_america/ids_done.txt") > 0){
-    return(read.table("./classificador_vol_america/rasters/ids_exported.txt"))
-  }else{
-    return(NULL)
-  }
+  tryCatch(read.table("./classificador_vol_america/rasters/ids_exported.txt")[,1],
+           error = function(e)
+             return(NULL))
 }
 
+
+
+
+read_1956_diba_rast <- function(id){
+  raster(paste("./classificador_vol_america/rasters/diba/", id, ".tif", sep=""))
+}
 
 # read_plots <- function(){
 #   print("read_plots")
@@ -43,11 +65,9 @@ read_quad_ids_exported <- function(){
 # }
 
 get_done_ids <- function(){
-  if (file.size("./classificador_vol_america/ids_done.txt") > 0){
-    return(read.table("./classificador_vol_america/ids_done.txt"))
-  }else{
-    return(NULL)
-  }
+  tryCatch(read.table("./classificador_vol_america/ids_done.txt")[,1],
+           error = function(e)
+             return(NULL))
 }
 
 get_classified_ids <- function(){
@@ -60,6 +80,15 @@ get_in_progress_classification_ids <- function(){
   files <- list.files("./classificador_vol_america/vect/classified/inprogress", pattern = "\\.shp$")
   files <- sub(".shp","",files)
   files
+}
+
+get_metrics_vectors <- function(){
+  ids <- get_metrics_ids()
+  lapply(ids, get_metrics_vector)
+}
+
+get_metrics_vector <- function(id){
+  readOGR(paste("./classificador_vol_america/vect/metrics/", id, ".shp"))
 }
 
 get_metrics_ids <- function(){
@@ -94,7 +123,7 @@ get_metrics_not_classified_ids <- function(){
 
 get_exported_ids <- function(){
   print("get_exported_ids")
-  list.files("./classificador_vol_america/rasters", pattern = "\\.tif$")
+  sub(".tif", "", list.files("./classificador_vol_america/rasters/exported", pattern = "\\.tif$"), "")
 }
 
 get_exported_not_smoothen_ids <- function(){

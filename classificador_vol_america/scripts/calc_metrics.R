@@ -80,7 +80,9 @@ calc_metrics <- function(name, elev, pend, clima.mean_temp, clima.amp_term, clim
   #vect$rug <- calc_ruggedness(rast, vect, vect$are)
 
   vect$tpi <- calc_TPI(rast, vect)
-
+  
+  vect$sqr <- calc_squaredness(vect)
+  
   #vect$tri <- calc_TRI(rast, vect)
 
   #vect$rog <- calc_roughness(rast, vect)
@@ -89,6 +91,10 @@ calc_metrics <- function(name, elev, pend, clima.mean_temp, clima.amp_term, clim
   
   l <- lapply(vect$id, calc_neighbor_metrics_, vect)
   vect <- cbind(vect, do.call("rbind", l))
+  
+  l <- lapply(vect$id, calc_neighbor_metrics_2_, vect)
+  vect <- cbind(vect, do.call("rbind", l))
+  
   vect <- vect[,-which(names(vect)=="nbr")]
   
   save_metrics_vector(name, vect)
@@ -98,25 +104,53 @@ calc_metrics <- function(name, elev, pend, clima.mean_temp, clima.amp_term, clim
 calc_neighbor_metrics_ <- function(id, vect){
   
   n_mn_mn <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$mn, na.rm=T)
-    
   n_sd_mn <- sd(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$mn, na.rm=T)
-  #n_mxdf_mn <- max(abs(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$mn, na.rm=T) - min(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$mn, na.rm=T)
-  
+ 
   n_mn_mdn <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$mdn, na.rm=T)
   
   n_mn_std <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$std, na.rm=T)
   
   n_mn_tpi <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$tpi, na.rm=T)
+  n_sd_tpi <- sd(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$tpi, na.rm=T)
   
   n_mn_slp <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$slp, na.rm=T)
-  n_std_slp <- sd(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$slp, na.rm=T)
+  n_sd_slp <- sd(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$slp, na.rm=T)
   
   n_mn_shp <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$shp, na.rm=T)
-  n_std_shp <- sd(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$shp, na.rm=T)
+  n_sd_shp <- sd(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$shp, na.rm=T)
+  
+  n_mn_sqr <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$sqr, na.rm=T)
+  n_sd_sqr <- sd(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$sqr, na.rm=T)
   
   return(data.frame(t(unlist(list("n_mn_mn"=n_mn_mn,"n_sd_mn"=n_sd_mn, "n_mn_mdn"=n_mn_mdn, 
                            "n_mn_std"=n_mn_std, "n_mn_slp"=n_mn_slp, "n_mn_shp"=n_mn_shp, "n_std_shp"=n_std_shp, "n_mn_tpi"=n_mn_tpi)))))
 }
+
+calc_neighbor_metrics_2_ <- function(id, vect){
+  
+  n_mn_mn_2 <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$n_mn_mn, na.rm=T)
+  n_sd_mn_2 <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$n_sd_mn, na.rm=T)
+  
+  n_mn_mdn_2 <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$n_mn_mdn, na.rm=T)
+  
+  n_mn_std_2 <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$n_mn_std, na.rm=T)
+  
+  n_mn_tpi_2 <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$n_mn_tpi, na.rm=T)
+  n_sd_tpi_2 <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$n_sd_tpi, na.rm=T)
+  
+  n_mn_slp_2 <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$n_mn_slp, na.rm=T)
+  n_sd_slp_2 <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$n_sd_slp, na.rm=T)
+  
+  n_mn_shp <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$n_mn_shp, na.rm=T)
+  n_sd_shp_2 <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$n_sd_shp, na.rm=T)
+  
+  n_mn_sqr <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$n_mn_sqr, na.rm=T)
+  n_sd_sqr_2 <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$n_sd_sqr, na.rm=T)
+  
+  return(data.frame(t(unlist(list("n_mn_mn"=n_mn_mn,"n_sd_mn"=n_sd_mn, "n_mn_mdn"=n_mn_mdn, 
+                                  "n_mn_std"=n_mn_std, "n_mn_slp"=n_mn_slp, "n_mn_shp"=n_mn_shp, "n_std_shp"=n_std_shp, "n_mn_tpi"=n_mn_tpi)))))
+}
+
 
 calc_ruggedness <- function(rast, vect, vect.area){
   count_classes_by_polygons(vect, rast, 0.09)/vect.area
@@ -143,4 +177,30 @@ calc_TRI <- function(rast, vect){
 # sf_006 <- st_as_sf(v_006)
 # int <- st_intersection(sf, sf_006)
 
-
+calc_squaredness <- function(vect){
+  #per calcular mètriques de com de quadrat és
+  
+  #ATENCIó: els marges de les quadrícules tenen valors no reals, caldria veure com solucionar-ho.
+  
+  #Possibles solucions:
+  #- Ajuntar els quatre clumpeds del voltant, tornar a passar clump_vector (per, amb sort, ajuntar els polígons adjacents),
+  #    calcular mètriques i tornar a tallar per extensió
+  #- Ajuntar tots els clumpeds de CAT/BCN, tornar a passar clumped (però trigarà molt), calcular mètriques i, si cal, tornar a tallar
+  #- Treure des d'un principi els rasters per quadrícules de 2kmx2km amb centre als centroides, calcular mètriques i retallar a 1x1km
+  v <- vect
+  sf <- st_as_sf(vect)
+  smp <- st_simplify(sf, preserveTopology = T, dTolerance = 2)
+  v <- as_Spatial(smp)
+  
+  vt <- vect(vect)
+  vect$peri <- perim(vt)
+  rm(vt)
+  
+  y <- fortify(v) 
+  ag <- aggregate(y, by=list(id=y$id), FUN=length)
+  for(i in ag$id){
+    v[i,"vtx"] <- ag[ag$id==i,2] 
+  }
+  #v$sqr_a <- v$vtx/v$area
+  sqr_p <- v$vtx/v$peri
+}

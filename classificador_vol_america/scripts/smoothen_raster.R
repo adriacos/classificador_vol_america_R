@@ -4,13 +4,13 @@ library(SpaDES)
 library(rgdal)
 library(parallel)
 
-smoothen_raster <- function(name){
-  print(paste("smoothen_raster", name, Sys.time(),sep="-"))
+smoothen_raster <- function(id){
+  print(paste("smoothen_raster", id, Sys.time(),sep="-"))
 
-  dir <- paste("./classificador_vol_america/rasters/smoothen/",name, sep="")
+  dir <- paste("./classificador_vol_america/rasters/smoothen/",id, sep="")
   
   i_st <- 1
-  rast <- raster(paste("./classificador_vol_america/rasters/", name, ".tif", sep=""))
+  rast <- raster(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
 
   if(dir.exists(dir)){
     list <- list.files(dir)
@@ -34,13 +34,13 @@ smoothen_raster <- function(name){
     print(paste("start ", i, Sys.time()))
     raster_split <- parLapply(clust, raster_split,smoothen_raster_, seed=i)
     rast <- mergeRaster(raster_split)
-    writeRaster(rast,paste(dir, "/", name, "_smth_", i, ".tif", sep=""), overwrite=TRUE)
+    writeRaster(rast,paste(dir, "/", id, "_smth_", i, ".tif", sep=""), overwrite=TRUE)
     print(paste("end ", i, Sys.time()))
   }
   stopCluster(clust)
   
   rast <- rast*10
-  res <- writeRaster(rast,paste("./classificador_vol_america/rasters/smoothen/",name,"_smth.tif", sep=""), overwrite=TRUE)
+  res <- writeRaster(rast,paste("./classificador_vol_america/rasters/smoothen/",id,"_smth.tif", sep=""), overwrite=TRUE)
   if(exists("res")){
     unlink(dir, recursive = TRUE)
   }
@@ -63,10 +63,10 @@ smoothen_raster_ <- function(rast, seed=8){
 }
 
 
-smoothen_raster_dp <- function(name, threshold=0.15){
-  print(paste("smoothen_raster", name, Sys.time(),sep="-"))
+smoothen_raster_dp <- function(id, threshold=0.15){
+  print(paste("smoothen_raster", id, Sys.time(),sep="-"))
   
-  rast <- raster(paste("./classificador_vol_america/rasters/", name, ".tif", sep=""))
+  rast <- raster(paste("./classificador_vol_america/rasters/", id, ".tif", sep=""))
   
   raster_split <- splitRaster(rast, 2,2, buffer=c(2,2))
   
@@ -114,8 +114,8 @@ smoothen_raster_dp <- function(name, threshold=0.15){
   rast <- mean(rast_1, rast_2, rast_3, na.rm=T)
   
   rast <- rast*10
-  res <- writeRaster(rast,paste("./classificador_vol_america/rasters/smoothen/",name,"_smth_dp.tif", sep=""), overwrite=TRUE)
-  print(paste("smoothen_raster END", name, Sys.time(),sep="-"))
+  res <- writeRaster(rast,paste("./classificador_vol_america/rasters/smoothen/",id,"_smth_dp.tif", sep=""), overwrite=TRUE)
+  print(paste("smoothen_raster END", id, Sys.time(),sep="-"))
   rast
 }
 
@@ -149,8 +149,8 @@ smoothen_raster_dp_ <- function(rast, threshold=0.15, seed=8){
 
 
 count_classes_by_polygons <- function(vect, rast, threshold){
-  if(!"id" %in% (names(vect))){
-    vect$id <- as.numeric(row.names(vect))
+  if(!"id" %in% (ids(vect))){
+    vect$id <- as.numeric(row.ids(vect))
     if(vect[1,]$id==0){
       vect$id <- vect$id +1
     }
@@ -211,8 +211,8 @@ count_classes <- function(r, threshold){
 
 
 calc_TPI_by_polygons <- function(vect, rast){
-  if(!"id" %in% (names(vect))){
-    vect$id <- as.numeric(row.names(vect))
+  if(!"id" %in% (ids(vect))){
+    vect$id <- as.numeric(row.ids(vect))
     if(vect[1,]$id==0){
       vect$id <- vect$id +1
     }
@@ -258,8 +258,8 @@ calc_TPI_raster <- function(rast){
 
 
 calc_TRI_by_polygons <- function(vect, rast){
-  if(!"id" %in% (names(vect))){
-    vect$id <- as.numeric(row.names(vect))
+  if(!"id" %in% (ids(vect))){
+    vect$id <- as.numeric(row.ids(vect))
     if(vect[1,]$id==0){
       vect$id <- vect$id +1
     }
@@ -305,8 +305,8 @@ calc_TRI_raster <- function(rast){
 
 
 calc_roughness_by_polygons <- function(vect, rast){
-  if(!"id" %in% (names(vect))){
-    vect$id <- as.numeric(row.names(vect))
+  if(!"id" %in% (ids(vect))){
+    vect$id <- as.numeric(row.ids(vect))
     if(vect[1,]$id==0){
       vect$id <- vect$id +1
     }

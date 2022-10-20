@@ -1,4 +1,6 @@
 
+source("./classificador_vol_america/scripts/read_data.R")
+
 insertIFN_VA_Class <- function(data){
   print("insert")
   csv <- NULL
@@ -35,4 +37,24 @@ save_in_progress_classification_vector <- function(name, vectors){
 
 save_metrics_vector <- function(name, vectors){
   writeOGR(vectors, "./classificador_vol_america/vect/metrics/", paste(name, "_mtcs", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE) 
+}
+
+save_id_exported <- function(id){
+  ids <- read_quad_ids_exported()
+  if(is.null(ids)){
+    write.table(id, "./classificador_vol_america/rasters/ids_exported.txt")
+  }else{
+    ids <- append(ids, id)
+    write.table(ids, "./classificador_vol_america/rasters/ids_exported.txt")
+  }
+}
+
+save_id_done <- function(id){
+  ids <- get_done_ids()
+  if(is.null(ids)){
+    write.table(id, "./classificador_vol_america/ids_done.txt")
+  }else{
+    ids <- append(ids, id)
+    write.table(ids, "./classificador_vol_america/ids_done.txt")
+  }
 }

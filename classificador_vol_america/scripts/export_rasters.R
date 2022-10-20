@@ -1,13 +1,11 @@
 source("./classificador_vol_america/scripts/project.R")
-
+library(htmlwidgets)
+library(webshot)
+library(png)
+library(raster)
 
 export_map <- function(m, id){
   print("export_map")
-  
-  library(htmlwidgets)
-  library(webshot)
-  library(png)
-  library(raster)
   dir <- paste("./classificador_vol_america/leaflet_temp/leaflet_",id,"_temp", sep="")
   dir.create(dir)
   saveWidget(m, paste(dir,"/leaflet_map.html", sep=""), selfcontained = FALSE)
@@ -21,7 +19,7 @@ export_map <- function(m, id){
   bbx <- getBox(m)
   rast = raster(ar2mat, xmn=bbx[1], xmx=bbx[2], ymn=bbx[3], ymx=bbx[4])
   ## Define the spatial reference system
-  rast <- project_EPSG_25831_rast(rast)
+  #rast <- project_EPSG_25831_rast(rast)
   #proj4string(rast) <- CRS("+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs")
   
   #writeRaster(rast, paste("./classificador_vol_america/rasters/", id, "-", province, "-", municipality, ".tif", sep=""), format="GTiff", overwrite=TRUE)
@@ -31,6 +29,10 @@ export_map <- function(m, id){
 
 save_map <- function(rast, id){
   writeRaster(rast, paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""), format="GTiff", overwrite=TRUE)
+}
+
+save_1956_diba_map<- function(rast, id){
+  writeRaster(rast, paste("./classificador_vol_america/rasters/diba/", id, ".tif", sep=""), format="GTiff", overwrite=TRUE)
 }
 
 getBox <- function(m){
