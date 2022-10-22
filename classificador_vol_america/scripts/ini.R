@@ -24,23 +24,23 @@ ini <- function(){
   done <- get_done_ids() 
   while(length(done)<length(ids)){
     #auto_class_BCN_all()
-    calc_metrics_all()
-    clumped <- get_clumped_ids()
-    if(length(clumped)>0){
-      res <- clumped%%cores
+    #calc_metrics_all()
+    vectorised <- get_vectorised_ids()
+    if(length(vectorised)>0){
+      res <- length(vectorised)%%cores
       if(res==0){
         clump_vectors_all()
       }else{
         vectorise_rasters_all(cores-res)
-        clumped <- get_clumped_ids()
-        res <- clumped%%cores
+        vectorised <- get_vectorised_ids()
+        res <- length(vectorised)%%cores
         if(res==0){
           clump_vectors_all()
         }else{
           smoothen_rasters_all(cores-res)
           vectorise_rasters_all()
-          clumped <- get_clumped_ids()
-          res <- clumped%%cores
+          vectorised <- get_vectorised_ids()
+          res <- length(vectorised)%%cores
           if(res==0){
             clump_vectors_all()
           }else{
@@ -63,6 +63,7 @@ save_1956_diba_to_rasters <- function(){
   ids <- read_quad_ids()
   vects <- get_quad_vect(ids)
   vects <- reproject_EPSG_4258_vect(vects)
+  vects <- buffer(vects, width=250, dissolve=T)
   
   if(length(vects)!= length(ids)){
     print("ALARM - vects length != ids length")
@@ -92,11 +93,12 @@ save_ortofotos_to_rasters <- function(n=NULL){
   if(!is.null(n)){
     ids <- ids[1:n]
   }else{
-    ids <- ids[1:100]
+    ids <- ids[1:20]
   }
   rm(done)
   vects <- get_quad_vect(ids)
   vects <- reproject_EPSG_4258_vect(vects)
+  #vects <- buffer(vects, width=200, dissolve=T)
   
   if(length(vects)!= length(ids)){
     print("ALARM - vects length != ids length")
@@ -112,9 +114,9 @@ save_ortofotos_to_rasters <- function(n=NULL){
   gc()
   
   mapply(create_export_ortofoto_raster, ids, lats, lngs)
-
   rm(lat)
   rm(long)
+  gc()
 }
 
 smoothen_rasters_all <- function(n=NULL){
@@ -138,7 +140,7 @@ vectorise_rasters_all <- function(n=NULL){
   if(length(ids)==0){
     return(NULL)
   }
-  cl <- makeCluster(5, outfile="log.txt")
+  cl <- makeCluster(5, outfile="log_vectorise.txt")
   clusterExport(cl, c("ids", "vectorise_save_smoothen_raster"), envir = environment())
   clusterEvalQ(cl, list(source("./classificador_vol_america/scripts/vectorise_raster.R"), library(raster), library(terra), library(rgdal)))
   parLapply(cl, ids, vectorise_save_smoothen_raster)
@@ -157,7 +159,7 @@ clump_vectors_all <- function(){
   print(ids)
   ids <- split(ids, ceiling(seq_along(ids)/5))
   for(ids_5 in ids){
-    cl <- makeCluster(5, outfile="log.txt")
+    cl <- makeCluster(5, outfile="log_clump.txt")
     clusterEvalQ(cl, list(source("./classificador_vol_america/scripts/clump_vector.R"), library(rgdal), library(rgeos), library(stringr), library(maptools)))
     clusterExport(cl, c("ids_5", "clump_vector"), envir = environment())
     clusterMap(cl, clump_vector, ids_5)
@@ -201,7 +203,7 @@ calc_metrics_all <- function(){
 
   print(ids)
   
-  cl <- makeCluster(5, outfile="log.txt")
+  cl <- makeCluster(5, outfile="log_metrics.txt")
   clusterExport(cl, c("ids", "calc_metrics", "elev", "pend", "clima.mean_temp","clima.amp_term","clima.mean_prec","clima.reg_pluv"), envir = environment())
   clusterEvalQ(cl, list(source("./classificador_vol_america/scripts/calc_metrics.R"), library(raster), library(terra), library(rgdal)))
   parLapply(cl, ids, calc_metrics, elev, pend, clima.mean_temp,clima.amp_term,clima.mean_prec,clima.reg_pluv)

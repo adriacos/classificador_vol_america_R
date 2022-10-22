@@ -30,7 +30,7 @@ smoothen_raster <- function(id){
   clusterExport(clust, c("raster_split","smoothen_raster_"), envir = environment())
   clusterEvalQ(clust, library(raster))
 
-  for(i in i_st:15){
+  for(i in i_st:12){
     print(paste("start ", i, Sys.time()))
     raster_split <- parLapply(clust, raster_split,smoothen_raster_, seed=i)
     rast <- mergeRaster(raster_split)
@@ -43,6 +43,7 @@ smoothen_raster <- function(id){
   res <- writeRaster(rast,paste("./classificador_vol_america/rasters/smoothen/",id,"_smth.tif", sep=""), overwrite=TRUE)
   if(exists("res")){
     unlink(dir, recursive = TRUE)
+    #file.remove(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
   }
   rast
 }
@@ -211,8 +212,8 @@ count_classes <- function(r, threshold){
 
 
 calc_TPI_by_polygons <- function(vect, rast){
-  if(!"id" %in% (ids(vect))){
-    vect$id <- as.numeric(row.ids(vect))
+  if(!"id" %in% (names(vect))){
+    vect$id <- as.numeric(row.names(vect))
     if(vect[1,]$id==0){
       vect$id <- vect$id +1
     }
@@ -258,8 +259,8 @@ calc_TPI_raster <- function(rast){
 
 
 calc_TRI_by_polygons <- function(vect, rast){
-  if(!"id" %in% (ids(vect))){
-    vect$id <- as.numeric(row.ids(vect))
+  if(!"id" %in% (names(vect))){
+    vect$id <- as.numeric(row.names(vect))
     if(vect[1,]$id==0){
       vect$id <- vect$id +1
     }
@@ -305,8 +306,8 @@ calc_TRI_raster <- function(rast){
 
 
 calc_roughness_by_polygons <- function(vect, rast){
-  if(!"id" %in% (ids(vect))){
-    vect$id <- as.numeric(row.ids(vect))
+  if(!"id" %in% (names(vect))){
+    vect$id <- as.numeric(row.names(vect))
     if(vect[1,]$id==0){
       vect$id <- vect$id +1
     }
