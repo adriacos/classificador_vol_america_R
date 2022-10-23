@@ -24,6 +24,7 @@ vectorise_raster <- function(rast){
 }
 
 vectorise_save_smoothen_raster <- function(id){
+  print("vectorise_save_smoothen_raster")
   file <- paste("./classificador_vol_america/rasters/smoothen/", id, "_smth.tif", sep="")
   vect <- vectorise_raster_by_url(file)
   save_vectorised_raster(vect, id)

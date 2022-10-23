@@ -4,6 +4,7 @@ library(SpaDES)
 library(rgdal)
 library(parallel)
 
+
 smoothen_raster <- function(id){
   print(paste("smoothen_raster", id, Sys.time(),sep="-"))
 

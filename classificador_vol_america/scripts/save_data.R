@@ -10,8 +10,6 @@ insertIFN_VA_Class <- function(data){
   } else{
     write.csv(data, "data/ifn_va_class.csv", row.names = FALSE)
   }
-  
-  
 }
 
 updateIFN_VA_Class <-function(register){

@@ -238,8 +238,14 @@ clump_vector <- function(id){
   }
   
   rast <- raster(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
-  vect$tpi <- calc_TPI_by_polygons(vect, rast) 
+  #vect$tpi <- calc_TPI_by_polygons(vect, rast) 
   
+  ex <- exact_extract(rast, vect, "stdev")
+  vect$sd <- ex
+  vect[is.na(vect$sd),"sd"] <- 0
+  
+  rm(rast)
+  gc()
   # v <- cut_clumped_by_extent(vect, id)
   # v.ids <- sapply(v@polygons, function(x) x@ID)
   # v.ids <- sapply(strsplit(v.ids, " "), function(x) x[1])
@@ -249,7 +255,7 @@ clump_vector <- function(id){
   
   vect <- cut_clumped_by_extent(vect, id)
   
-  vect.towrite <- vect[,c("DN","tpi","sd")]
+  vect.towrite <- vect[,c("DN","sd")]
   #vect.towrite$area <- round(vect.towrite$area,2)
   # vect.towrite <- vect.towrite[,c()]
   # vect.towrite$fid <- vect$id

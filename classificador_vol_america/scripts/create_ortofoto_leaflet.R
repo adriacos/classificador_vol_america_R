@@ -35,6 +35,6 @@ create_ortofoto_leaflet <- function(lat, long){
 # 		layerId = "1956", 
 # 		group = "1956",
 # 	)
-	Sys.sleep(3)
+	Sys.sleep(1)
 	return(m)
 }

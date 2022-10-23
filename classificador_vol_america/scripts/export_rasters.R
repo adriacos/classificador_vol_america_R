@@ -27,9 +27,6 @@ export_map <- function(m, id){
   rast
 }
 
-save_map <- function(rast, id){
-  writeRaster(rast, paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""), format="GTiff", overwrite=TRUE)
-}
 
 save_1956_diba_map<- function(rast, id){
   writeRaster(rast, paste("./classificador_vol_america/rasters/diba/", id, ".tif", sep=""), format="GTiff", overwrite=TRUE)
