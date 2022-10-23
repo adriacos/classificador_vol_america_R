@@ -26,59 +26,72 @@ ini <- function(){
     #auto_class_BCN_all()
     #calc_metrics_all()
     vectorised <- get_vectorised_ids()
-    if(length(vectorised)>0){
-      res <- length(vectorised)%%cores
-      if(res==0){
-        clump_vectors_all()
-      }else{
-        vectorise_rasters_all(cores-res)
-        vectorised <- get_vectorised_ids()
-        res <- length(vectorised)%%cores
-        if(res==0){
-          clump_vectors_all()
-        }else{
-          smoothen_rasters_all(cores-res)
-          vectorise_rasters_all()
-          vectorised <- get_vectorised_ids()
-          res <- length(vectorised)%%cores
-          if(res==0){
-            clump_vectors_all()
-          }else{
-            save_ortofotos_to_rasters(cores-res)
-            smoothen_rasters_all()
-            vectorise_rasters_all()
-          }
-        }
-      }
-    }else{
-      smoothen <- get_smoothen_ids()
-      if(length(smoothen)>0){
-        res <- length(smoothen)%%cores
-        if(res==0){
-          vectorise_rasters_all()
-          next()
-        }
-        else{
-          smoothen_rasters_all(cores-res)
-          vectorise_rasters_all()
-          next()
-        }
-      }else{
-        exported <- get_exported_ids()
-        smoothen <- get_smoothen_ids()
-        vectorised <- get_vectorised_ids()
-        exported <- exported[!exported %in% smoothen]
-        exported <- exported[!exported %in% vectorised]
-        if(length(exported)>0){
-          smoothen_rasters_all()
-          vectorise_rasters_all()
-          next()  
-        }
-      }
+    if(length(vectorised)>3*cores){
+      clump_vectors_all()
+    }
+    smoothen_rasters_all()
+    vectorise_rasters_all()
+    vectorised <- get_vectorised_ids()
+    if(length(vectorised)>3*cores){
+      clump_vectors_all()
     }
     save_ortofotos_to_rasters()
     done <- get_done_ids()
   }
+    
+    # if(length(vectorised)>0){
+    #   res <- length(vectorised)%%cores
+    #   if(res==0){
+    #     clump_vectors_all()
+    #   }else{
+    #     vectorise_rasters_all(cores-res)
+    #     vectorised <- get_vectorised_ids()
+    #     res <- length(vectorised)%%cores
+    #     if(res==0){
+    #       clump_vectors_all()
+    #     }else{
+    #       smoothen_rasters_all(cores-res)
+    #       vectorise_rasters_all()
+    #       vectorised <- get_vectorised_ids()
+    #       res <- length(vectorised)%%cores
+    #       if(res==0){
+    #         clump_vectors_all()
+    #       }else{
+    #         save_ortofotos_to_rasters(cores-res)
+    #         smoothen_rasters_all()
+    #         vectorise_rasters_all()
+    #       }
+    #     }
+    #   }
+    # }else{
+    #   smoothen <- get_smoothen_ids()
+    #   if(length(smoothen)>0){
+    #     res <- length(smoothen)%%cores
+    #     if(res==0){
+    #       vectorise_rasters_all()
+    #       next()
+    #     }
+    #     else{
+    #       smoothen_rasters_all(cores-res)
+    #       vectorise_rasters_all()
+    #       next()
+    #     }
+    #   }else{
+    #     exported <- get_exported_ids()
+    #     smoothen <- get_smoothen_ids()
+    #     vectorised <- get_vectorised_ids()
+    #     exported <- exported[!exported %in% smoothen]
+    #     exported <- exported[!exported %in% vectorised]
+    #     if(length(exported)>0){
+    #       smoothen_rasters_all()
+    #       vectorise_rasters_all()
+    #       next()  
+    #     }
+    #   }
+    # }
+    # save_ortofotos_to_rasters()
+    # done <- get_done_ids()
+  # }
 }
 
 save_1956_diba_to_rasters <- function(){
@@ -111,11 +124,13 @@ save_1956_diba_to_rasters <- function(){
 save_ortofotos_to_rasters <- function(n=NULL){
   print("save_ortofotos_to_rasters")
   done <- get_done_ids() 
-  ids <- read_quad_ids_not_exported(notin=done)
+  corrupted <- get_corrupted_ids() 
+  
+  ids <- read_quad_ids_not_exported(notin=append(done, corrupted))
   if(!is.null(n)){
     ids <- ids[1:n]
   }else{
-    ids <- ids[1:5]
+    ids <- ids[1:10]
   }
   rm(done)
   vects <- get_quad_vect(ids)
@@ -135,8 +150,12 @@ save_ortofotos_to_rasters <- function(n=NULL){
   rm(vects)
   gc()
 
-  mapply(create_export_ortofoto_raster, ids, lats, lngs)
-
+  res <- mapply(create_export_ortofoto_raster, ids, lats, lngs)
+  nulls <- length(sapply(res, is.null)[sapply(res, is.null)==T])
+  if(nulls>0){
+    save_ortofotos_to_rasters(nulls)
+  }
+  
   rm(lat)
   rm(long)
   gc()
@@ -184,7 +203,12 @@ clump_vectors_all <- function(){
   #cores <- detectCores()
   cores <- 5
   #ids <- get_ids_smoothen_vectorised_not_clumped()
-  ids <- get_vectorised_ids()
+  vects <- get_vecrtorised_vectors()
+  vects <- vects[order(sapply(vects, nrow))]
+  ids <- names(vects)
+  
+  #ids <- get_vectorised_ids()
+  
   if(length(ids)==0){
     return(NULL)
   }

@@ -47,6 +47,16 @@ save_id_exported <- function(id){
   }
 }
 
+save_id_corrupted <- function(id){
+  ids <- get_corrupted_ids()
+  if(is.null(ids)){
+    write.table(id, "./classificador_vol_america/rasters/ids_corrupted.txt")
+  }else{
+    ids <- append(ids, id)
+    write.table(ids, "./classificador_vol_america/rasters/ids_corrupted.txt")
+  }
+}
+
 save_id_done <- function(id){
   ids <- get_done_ids()
   if(is.null(ids)){

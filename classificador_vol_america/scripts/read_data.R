@@ -70,6 +70,12 @@ get_done_ids <- function(){
              return(NULL))
 }
 
+get_corrupted_ids <- function(){
+  tryCatch(read.table("./classificador_vol_america/rasters/ids_corrupted.txt")[,1],
+           error = function(e)
+             return(NULL))
+}
+
 get_classified_ids <- function(){
   print("get_classified_ids")
   files <- list.files("./classificador_vol_america/vect/classified", pattern = "\\.shp$")
@@ -146,6 +152,13 @@ get_vectorised_ids <- function(){
   files <- get_vectorised_files()
   ids <- sub(".shp","",files)
   ids
+}
+
+get_vecrtorised_vectors <- function(){
+  print("get_vecrtorised_vectors")
+  ids <- get_vectorised_ids()
+  loc <- sapply(ids, function(id) paste("./classificador_vol_america/vect/vectorised/", id, ".shp", sep=""))
+  lapply(loc, readOGR)
 }
 
 get_vectorised_files <- function(){

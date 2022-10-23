@@ -204,3 +204,17 @@ calc_squaredness <- function(vect){
   #v$sqr_a <- v$vtx/v$area
   sqr_p <- v$vtx/v$peri
 }
+
+calc_longness <- function(vect){
+  calc_longest_line_within(vect)/vect$are
+}
+calc_longest_line_within <- function(vect){
+  
+  #Treure vèrtex del polígon
+  #fer matriu de distàncies entre cada vèrtex
+  #convertir relacions en línies
+  #terra::relation -> quedar-nos només amb les línies que estiguin "within" el polígon
+  #quedar-nos amb la més llarga
+  
+  
+}

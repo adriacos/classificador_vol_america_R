@@ -11,6 +11,14 @@ create_export_ortofoto_raster <- function(id, lat, lng, vect){
   print(id)
   map <- create_ortofoto_leaflet(lat, lng)
   rast <- export_map(map, id)
+  
+  #check if there are holes
+  if(max(table(values(rast))/length(rast)) > 0.10){
+    print(paste("Map with id ", id, " was corrupted at extraction", sep=""))
+    save_id_corrupted(id)
+    return(NULL)
+  }
+  
   rast <- project_EPSG_4258_rast(rast)
   #rast <- reproject_EPSG_25831_rast(rast)
   
