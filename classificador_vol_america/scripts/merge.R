@@ -1,5 +1,8 @@
 
 
+library(sf)
+library(tidyverse)
+
 merge_rasters <- function(rasters){
   r1 <- rasters[[1]]
   rasts <- rasters[-1]
@@ -15,34 +18,47 @@ merge_rasters <- function(rasters){
 
 merge_clumped <- function(){
   vect <- do.call(rbind, get_clumped_vectors())
-  v <- cut_overlapping_vectors(vect)
+  vect <- cut_overlapping_vectors(vect)
   vect
 }
 
 
 
-library(sf)
-library(tidyverse)
 
-cut_overlapping_vectors <- function(polygons) {
-  b <- st_as_sf(polygons)
+
+
+cut_overlapping_vectors <- function(vect) {
+  vect <- vect[order(vect$area),]
+  for(i in 1:length(vect)){
+    print(i)
+    v1 <- vect[i, ]
+    for(ii in 1:length(vect)){
+      if(i==ii){next()}
+      v2 <- vect[ii,]
+      v1 <- v1 - v2
+      vect.rest <- vect[-i,]
+      vect.t <- rbind(vect.rest, v1)
+    }
+  }
+  return(vect.t)
   
-  
-  
-  # pol = st_polygon(list(rbind(c(0,0), c(1,0), c(1,1), c(0,1), c(0,0))))
-  # b = st_sfc(pol, pol + c(.8, .2), pol + c(.2, .8))
-  
-  independent <- b %>% st_sf %>% st_intersection %>% subset(n.overlaps<=1)
-  overlap <- b %>% st_sf %>% st_intersection %>% subset(n.overlaps>1) %>% st_union()
-  partition <- b %>% st_centroid %>% st_union %>% st_voronoi %>% st_cast
-  
-  merge_list <- st_within(partition %>% st_intersection(overlap), b)
-  
-  merged_list <- lapply(1:length(merge_list), function(i){st_sf(st_intersection(partition[i], b[merge_list[[i]]]))})
-  
-  new_b <- do.call(rbind, merged_list)
-  return(as(new_b, "Spatial"))
-  
+  #mirar de millorar-ho dividint la part comuna, etc.
+  polygons <- st_as_sf(polygons)
+  # 
+  # # pol = st_polygon(list(rbind(c(0,0), c(1,0), c(1,1), c(0,1), c(0,0))))
+  # # b = st_sfc(pol, pol + c(.8, .2), pol + c(.2, .8))
+  # 
+  # independent <- b %>% st_sf %>% st_intersection %>% subset(n.overlaps<=1)
+  # overlap <- b %>% st_sf %>% st_intersection %>% subset(n.overlaps>1) %>% st_union()
+  # partition <- b %>% st_centroid %>% st_union %>% st_voronoi %>% st_cast
+  # 
+  # merge_list <- st_within(partition %>% st_intersection(overlap), b)
+  # 
+  # merged_list <- lapply(1:length(merge_list), function(i){st_sf(st_intersection(partition[i], b[merge_list[[i]]]))})
+  # 
+  # new_b <- do.call(rbind, merged_list)
+  # return(as(new_b, "Spatial"))
+  # 
   
   centroids <- polygons %>% st_centroid
   

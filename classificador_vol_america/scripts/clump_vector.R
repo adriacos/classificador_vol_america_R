@@ -1,6 +1,7 @@
 source("./classificador_vol_america/scripts/project.R")
 source("./classificador_vol_america/scripts/calc_metrics.R")
 source("./classificador_vol_america/scripts/read_data.R")
+source("./classificador_vol_america/scripts/merge.R")
 
 library(rgdal)
 library(rgeos)
@@ -301,8 +302,7 @@ clump_vector_global <- function(){
   
   vect <- merge_clumped()
   ids <- get_clumped_ids()
-  rasts <- read_ortofotos(ids)
-  
+  rast <- merge_rasters(read_ortofotos(ids))
   
   #treure àrea
   v <- vect(vect)
@@ -315,19 +315,18 @@ clump_vector_global <- function(){
     vect$id <- vect$id +1
   }
   
-  # ex <- exact_extract(rast, vect, "stdev")
-  # vect$sd <- ex
-  # vect[is.na(vect$sd),"sd"] <- 0
-  
+  ex <- exact_extract(rast, vect, "stdev")
+  vect$sd <- ex
+  vect[is.na(vect$sd),"sd"] <- 0
+
   #vect$tpi <- calc_TPI(rast, vect)
-  
+
   #treure DN
-  # ex <- exact_extract(rast, vect, "mean")
-  # vect$DN <- ex*10
-  # vect[is.na(vect$DN),"DN"] <- 0.5
-  # rm(rast)
-  # gc()
-  # 
+  ex <- exact_extract(rast, vect, "mean")
+  vect$DN <- ex*10
+  vect[is.na(vect$DN),"DN"] <- 0.5
+  rm(rast)
+  gc()
   
   time <- Sys.time()
   neighbours <- gTouches(vect, returnDense=FALSE, byid=TRUE, )
@@ -400,25 +399,25 @@ clump_vector_global <- function(){
       which.min((abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       ,]
     
-    if(first500 ==F && vect.min$area >= 200 && vect.min$area < 500 && abs(vect.min.neighbors.min$DN-vect.min$DN)>2.1){
+    if(first500 ==F && vect.min$area >= 200 && vect.min$area < 500 && abs(vect.min.neighbors.min$DN-vect.min$DN)>2){
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
-    }else if(vect.min$area >= 500 && vect.min$area < 3000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.8){
+    }else if(vect.min$area >= 500 && vect.min$area < 3000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.7){
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
-    }else if(vect.min$area >= 3000 && vect.min$area < 6000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.5){
+    }else if(vect.min$area >= 3000 && vect.min$area < 6000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.4){
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
-    }else if(vect.min$area >= 6000 && vect.min$area < 9000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.2){
+    }else if(vect.min$area >= 6000 && vect.min$area < 9000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.1){
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
-    } else if(vect.min$area >= 9000 && vect.min$area < 12000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.9){
+    } else if(vect.min$area >= 9000 && vect.min$area < 12000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.8){
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
-    } else if(vect.min$area >= 12000 && vect.min$area < 15000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.6){
+    } else if(vect.min$area >= 12000 && vect.min$area < 15000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.5){
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
-    } else if(vect.min$area >= 15000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.3){
+    } else if(vect.min$area >= 15000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.2){
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     }
