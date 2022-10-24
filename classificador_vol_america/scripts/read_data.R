@@ -154,6 +154,13 @@ get_vectorised_ids <- function(){
   ids
 }
 
+get_clumped_vectors <- function(){
+  print("get_clumped_vectors")
+  ids <- get_clumped_ids()
+  loc <- sapply(ids, function(id) paste("./classificador_vol_america/vect/clumped/", id, "_clmp.shp", sep=""))
+  lapply(loc, readOGR)
+}
+
 get_vecrtorised_vectors <- function(){
   print("get_vecrtorised_vectors")
   ids <- get_vectorised_ids()

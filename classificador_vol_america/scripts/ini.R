@@ -135,7 +135,6 @@ save_ortofotos_to_rasters <- function(n=NULL){
   rm(done)
   vects <- get_quad_vect(ids)
   vects <- reproject_EPSG_4258_vect(vects)
-  #vects <- buffer(vects, width=200, dissolve=T)
   
   if(length(vects)!= length(ids)){
     print("ALARM - vects length != ids length")
@@ -143,7 +142,6 @@ save_ortofotos_to_rasters <- function(n=NULL){
   }
   
   coordinates <- get_vectors_centroids_coords(vects)
-  #coordinates <- get_EPSG_4258_vectors_centroids_lat_lng(vects)
   lats <- coordinates[,2]
   lngs <- coordinates[,1]
   rm(coordinates)
@@ -155,6 +153,30 @@ save_ortofotos_to_rasters <- function(n=NULL){
   if(nulls>0){
     save_ortofotos_to_rasters(nulls)
   }
+  
+  rm(lat)
+  rm(long)
+  gc()
+}
+
+try_export_corrupted <- function(){
+  ids <- get_corrupted_ids() 
+  vects <- get_quad_vect(ids)
+  vects <- reproject_EPSG_4258_vect(vects)
+  
+  if(length(vects)!= length(ids)){
+    print("ALARM - vects length != ids length")
+    stop()
+  }
+  
+  coordinates <- get_vectors_centroids_coords(vects)
+  lats <- coordinates[,2]
+  lngs <- coordinates[,1]
+  rm(coordinates)
+  rm(vects)
+  gc()
+  
+  mapply(create_export_ortofoto_raster, ids, lats, lngs)
   
   rm(lat)
   rm(long)
@@ -204,7 +226,7 @@ clump_vectors_all <- function(){
   cores <- 5
   #ids <- get_ids_smoothen_vectorised_not_clumped()
   vects <- get_vecrtorised_vectors()
-  vects <- vects[order(sapply(vects, nrow))]
+  vects <- vects[order(sapply(vects, nrow), decreasing=T)]
   ids <- names(vects)
   
   #ids <- get_vectorised_ids()
