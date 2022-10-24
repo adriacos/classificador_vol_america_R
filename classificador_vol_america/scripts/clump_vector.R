@@ -59,6 +59,16 @@ clump_vector <- function(id){
   
   vect$toignore <- FALSE
   
+  yes <- c()
+  no200 <- c()
+  no500 <- c()
+  no3000 <- c()
+  no6000 <- c()
+  no9000 <- c()
+  no12000 <- c()
+  no15000 <- c()
+  
+  
   c <- 1
   time <- Sys.time()
   first500 <- FALSE
@@ -81,55 +91,31 @@ clump_vector <- function(id){
     if(vect.min$area >= 500){
       if(first500==F){
         vect$toignore <- F
-        # vect.towrite <- vect
-        # vect.towrite$area <- round(vect.towrite$area,2)
-        # writeOGR(vect.towrite, dir_bkp, paste(id, "_clmp_500_bkp", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
-        # rm(vect.towrite)
         first500=T
       }
     }else if(vect.min$area >= 3000){
       if(first3000==F){
         vect$toignore <- F
-        # vect.towrite <- vect
-        # vect.towrite$area <- round(vect.towrite$area,2)
-        # writeOGR(vect.towrite, dir_bkp, paste(id, "_clmp_3000_bkp", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
-        # rm(vect.towrite)
         first3000=T
       }
     }else if(vect.min$area >= 6000){
       if(first6000==F){
         vect$toignore <- F
-        # vect.towrite <- vect
-        # vect.towrite$area <- round(vect.towrite$area,2)
-        # writeOGR(vect.towrite, dir_bkp, paste(id, "_clmp_6000_bkp", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
-        # rm(vect.towrite)
         first6000=T
       }
     }else if(vect.min$area >= 9000){
       if(first9000==F){
         vect$toignore <- F
-        # vect.towrite <- vect
-        # vect.towrite$area <- round(vect.towrite$area,2)
-        # writeOGR(vect.towrite, dir_bkp, paste(id, "_clmp_9000_bkp", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
-        # rm(vect.towrite)
         first9000=T
       }
     }else if(vect.min$area >= 12000){
       if(first12000==F){
         vect$toignore <- F
-        # vect.towrite <- vect
-        # vect.towrite$area <- round(vect.towrite$area,2)
-        # writeOGR(vect.towrite, dir_bkp, paste(id, "_clmp_12000_bkp", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
-        # rm(vect.towrite)
         first12000=T
       }
     }else if(vect.min$area >= 15000){
       if(first15000==F){
         vect$toignore <- F
-        # vect.towrite <- vect
-        # vect.towrite$area <- round(vect.towrite$area,2)
-        # writeOGR(vect.towrite, dir_bkp, paste(id, "_clmp_12000_bkp", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
-        # rm(vect.towrite)
         first15000=T
       }
     }
@@ -141,27 +127,36 @@ clump_vector <- function(id){
       ,]
   
     if(first500 ==F && vect.min$area >= 200 && vect.min$area < 500 && abs(vect.min.neighbors.min$DN-vect.min$DN)>2){
+      no200 <- append(no200, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     }else if(vect.min$area >= 500 && vect.min$area < 3000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.7){
+      no500 <- append(no200, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     }else if(vect.min$area >= 3000 && vect.min$area < 6000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.4){
+      no3000 <- append(no200, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     }else if(vect.min$area >= 6000 && vect.min$area < 9000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.1){
+      no6000 <- append(no200, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     } else if(vect.min$area >= 9000 && vect.min$area < 12000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.8){
+      no9000 <- append(no200, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     } else if(vect.min$area >= 12000 && vect.min$area < 15000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.5){
+      no12000 <- append(no200, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     } else if(vect.min$area >= 15000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.2){
+      no15000 <- append(no200, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     }
+    
+    yes <- append(yes, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
     
     if(nrow(vect.min) > 1){
       print("ALARM! vect.min > 1")
@@ -246,20 +241,10 @@ clump_vector <- function(id){
   
   rm(rast)
   gc()
-  # v <- cut_clumped_by_extent(vect, id)
-  # v.ids <- sapply(v@polygons, function(x) x@ID)
-  # v.ids <- sapply(strsplit(v.ids, " "), function(x) x[1])
-  # v.ids <- data.frame(v.ids)
-  # row.names(v.ids) <- v.ids[,1]
-  # vct <- SpatialPolygonsDataFrame(v, v.ids)
   
   vect <- cut_clumped_by_extent(vect, id, 2)
   
   vect.towrite <- vect[,c("DN","sd")]
-  #vect.towrite$area <- round(vect.towrite$area,2)
-  # vect.towrite <- vect.towrite[,c()]
-  # vect.towrite$fid <- vect$id
-  #vect.towrite <- vect.towrite[,-3]
   writeOGR(vect.towrite, dir, paste(id, "_clmp", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)  
   rm(vect.towrite)
   
@@ -293,7 +278,6 @@ cut_clumped_by_extent <- function(vect, id, buffer=0){
   }
   
   v <- crop(v, ext)
-  #vect <- gIntersection(vect, ext, byid=T)
   vect <- as(v, "Spatial")
   vect
 }
@@ -423,6 +407,8 @@ clump_vector_global <- function(){
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     }
+    
+    
     
     if(nrow(vect.min) > 1){
       print("ALARM! vect.min > 1")
