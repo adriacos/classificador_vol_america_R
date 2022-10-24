@@ -234,12 +234,12 @@ clump_vector <- function(id){
   
   print(paste("YEs:", mean(yes)))
   print(paste("NO200:", mean(no200)))
-  print(paste("NO500:", mean(no200)))
-  print(paste("NO3000:", mean(no200)))
-  print(paste("NO6000:", mean(no200)))
-  print(paste("NO9000:", mean(no200)))
-  print(paste("NO12000:", mean(no200)))
-  print(paste("NO15000:", mean(no200)))
+  print(paste("NO500:", mean(no500)))
+  print(paste("NO3000:", mean(no3000)))
+  print(paste("NO6000:", mean(no6000)))
+  print(paste("NO9000:", mean(no9000)))
+  print(paste("NO12000:", mean(no12000)))
+  print(paste("NO15000:", mean(no15000)))
   
   
   rast <- raster(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
