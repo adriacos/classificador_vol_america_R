@@ -14,7 +14,7 @@ smoothen_raster <- function(id){
   rast <- raster(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
 
   if(dir.exists(dir)){
-    list <- list.files(dir)
+    list <- list.files(dir, pattern = "\\.tif$")
     if(length(list)>0){
       i_st <-length(list) + 1 
       rast <- raster(paste(dir, list[length(list)],sep="/"))  
