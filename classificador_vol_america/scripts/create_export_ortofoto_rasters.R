@@ -33,6 +33,7 @@ create_export_ortofoto_raster <- function(id, lat, lng, vect){
   #rsat <- cut_ortofoto_raster(rast, vect)
   #save_ortofoto_raster_buffer(rast, id)
   save_id_exported(id)
+  remove_id_corrupted(id)
   rast
 }
 

@@ -253,7 +253,7 @@ clump_vector <- function(id){
   # row.names(v.ids) <- v.ids[,1]
   # vct <- SpatialPolygonsDataFrame(v, v.ids)
   
-  vect <- cut_clumped_by_extent(vect, id)
+  vect <- cut_clumped_by_extent(vect, id, 2)
   
   vect.towrite <- vect[,c("DN","sd")]
   #vect.towrite$area <- round(vect.towrite$area,2)
@@ -283,10 +283,15 @@ clump_vector <- function(id){
   gc()
 }
 
-cut_clumped_by_extent <- function(vect, id){
+cut_clumped_by_extent <- function(vect, id, buffer=0){
   v <- vect(vect)
   ext <- get_quad_vect(id)
   ext <- vect(reproject_EPSG_4258_vect(ext))
+  
+  if(buffer>0){
+    ext <- buffer(ext, width=buffer, dissolve=T)
+  }
+  
   v <- crop(v, ext)
   #vect <- gIntersection(vect, ext, byid=T)
   vect <- as(v, "Spatial")
@@ -298,7 +303,7 @@ clump_vector_global <- function(){
   print("clump_vector")
   # dir <- "./classificador_vol_america/vect/clumped/"
   
-  vect <- do.call(rbind, get_clumped_vectors())
+  vect <- merge_clumped()
   
   #treure àrea
   v <- vect(vect)
