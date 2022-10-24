@@ -306,7 +306,7 @@ clump_vector_global <- function(){
   rm(v)
   
   
-  vect$id <- as.numeric(row.names(vect))
+  vect$id <- 1:length(vect)
   if(vect[1,]$id==0){
     vect$id <- vect$id +1
   }
@@ -396,25 +396,25 @@ clump_vector_global <- function(){
       which.min((abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       ,]
     
-    if(first500 ==F && vect.min$area >= 200 && vect.min$area < 500 && abs(vect.min.neighbors.min$DN-vect.min$DN)>2){
+    if(first500 ==F && vect.min$area >= 200 && vect.min$area < 500 && abs(vect.min.neighbors.min$DN-vect.min$DN)>2.1){
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
-    }else if(vect.min$area >= 500 && vect.min$area < 3000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.7){
+    }else if(vect.min$area >= 500 && vect.min$area < 3000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.8){
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
-    }else if(vect.min$area >= 3000 && vect.min$area < 6000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.4){
+    }else if(vect.min$area >= 3000 && vect.min$area < 6000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.5){
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
-    }else if(vect.min$area >= 6000 && vect.min$area < 9000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.1){
+    }else if(vect.min$area >= 6000 && vect.min$area < 9000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.2){
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
-    } else if(vect.min$area >= 9000 && vect.min$area < 12000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.8){
+    } else if(vect.min$area >= 9000 && vect.min$area < 12000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.9){
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
-    } else if(vect.min$area >= 12000 && vect.min$area < 15000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.5){
+    } else if(vect.min$area >= 12000 && vect.min$area < 15000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.6){
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
-    } else if(vect.min$area >= 15000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.2){
+    } else if(vect.min$area >= 15000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.3){
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     }
@@ -511,7 +511,7 @@ clump_vector_global <- function(){
   
   # vect <- cut_clumped_by_extent(vect, id)
   
-  vect.towrite <- vect[,c("DN","sd")]
+  vect.towrite <- vect
   #vect.towrite$area <- round(vect.towrite$area,2)
   # vect.towrite <- vect.towrite[,c()]
   # vect.towrite$fid <- vect$id
