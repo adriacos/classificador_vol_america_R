@@ -232,6 +232,16 @@ clump_vector <- function(id){
     }
   }
   
+  print(paste("YEs:", mean(yes)))
+  print(paste("NO200:", mean(no200)))
+  print(paste("NO500:", mean(no200)))
+  print(paste("NO3000:", mean(no200)))
+  print(paste("NO6000:", mean(no200)))
+  print(paste("NO9000:", mean(no200)))
+  print(paste("NO12000:", mean(no200)))
+  print(paste("NO15000:", mean(no200)))
+  
+  
   rast <- raster(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
   #vect$tpi <- calc_TPI_by_polygons(vect, rast) 
   
