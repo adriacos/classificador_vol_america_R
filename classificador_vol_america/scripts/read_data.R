@@ -1,6 +1,11 @@
 
 source("./classificador_vol_america/scripts/project.R")
 
+read_ortofotos <- function(ids){
+  loc <- sapply(ids, function(id) paste("./classificador_vol_america/rasters/all/", id, ".tif", sep=""))
+  lapply(loc, raster)
+}
+
 read_quad_ids_not_exported <- function(notin=NULL){
   all <- read_quad_ids(notin)
   exported <- read_quad_ids_exported()

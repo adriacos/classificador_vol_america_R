@@ -10,7 +10,7 @@ library(exactextractr)
 library(raster)
 library(terra)
 library(smoothr)
-library(sf)
+#library(sf)
 
 clump_vector <- function(id){
   
@@ -300,6 +300,9 @@ clump_vector_global <- function(){
   # dir <- "./classificador_vol_america/vect/clumped/"
   
   vect <- merge_clumped()
+  ids <- get_clumped_ids()
+  rasts <- read_ortofotos(ids)
+  
   
   #treure àrea
   v <- vect(vect)
