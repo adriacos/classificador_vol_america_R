@@ -131,27 +131,27 @@ clump_vector <- function(id){
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     }else if(vect.min$area >= 500 && vect.min$area < 3000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.7){
-      no500 <- append(no200, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
+      no500 <- append(no500, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     }else if(vect.min$area >= 3000 && vect.min$area < 6000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.4){
-      no3000 <- append(no200, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
+      no3000 <- append(no3000, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     }else if(vect.min$area >= 6000 && vect.min$area < 9000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.1){
-      no6000 <- append(no200, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
+      no6000 <- append(no6000, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     } else if(vect.min$area >= 9000 && vect.min$area < 12000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.8){
-      no9000 <- append(no200, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
+      no9000 <- append(no9000, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     } else if(vect.min$area >= 12000 && vect.min$area < 15000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.5){
-      no12000 <- append(no200, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
+      no12000 <- append(no12000, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     } else if(vect.min$area >= 15000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.2){
-      no15000 <- append(no200, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
+      no15000 <- append(no15000, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     }
@@ -227,19 +227,19 @@ clump_vector <- function(id){
     vect.min <- NULL
     c <- c+1
     if(c%%50==0){
-      print(paste(as.numeric(difftime(Sys.time(),time,units="secs")), c, nrow(vect), sep="-"))
+      print(paste(id, as.numeric(difftime(Sys.time(),time,units="secs")), c, nrow(vect), sep="-"))
       time <- Sys.time()
     }
   }
   
-  print(paste("YEs:", mean(yes)))
-  print(paste("NO200:", mean(no200)))
-  print(paste("NO500:", mean(no500)))
-  print(paste("NO3000:", mean(no3000)))
-  print(paste("NO6000:", mean(no6000)))
-  print(paste("NO9000:", mean(no9000)))
-  print(paste("NO12000:", mean(no12000)))
-  print(paste("NO15000:", mean(no15000)))
+  print(paste("YEs:", mean(yes, na.rm=T)))
+  print(paste("NO200:", min(no200, na.rm=T)))
+  print(paste("NO500:", min(no500, na.rm=T)))
+  print(paste("NO3000:", min(no3000, na.rm=T)))
+  print(paste("NO6000:", min(no6000, na.rm=T)))
+  print(paste("NO9000:", min(no9000, na.rm=T)))
+  print(paste("NO12000:", min(no12000, na.rm=T)))
+  print(paste("NO15000:", min(no15000, na.rm=T)))
   
   
   rast <- raster(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
@@ -280,12 +280,14 @@ clump_vector <- function(id){
 
 cut_clumped_by_extent <- function(vect, id, buffer=0){
   v <- vect(vect)
-  ext <- get_quad_vect(id)
-  ext <- vect(reproject_EPSG_4258_vect(ext))
+
+  ext <- reproject_EPSG_4258_vect(get_quad_vect(id))
   
   if(buffer>0){
     ext <- buffer(ext, width=buffer, dissolve=T)
   }
+  
+  ext <- vect(ext)
   
   v <- crop(v, ext)
   vect <- as(v, "Spatial")

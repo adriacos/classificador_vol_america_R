@@ -25,6 +25,7 @@ create_export_ortofoto_raster <- function(id, lat, lng, vect){
   
   ext <- reproject_EPSG_4258_vect(get_quad_vect(id))
   buf <- buffer(ext, width=150, dissolve=T)
+  
   rast <- cut_ortofoto_raster(rast, buf)
   save_ortofoto_raster_buffer(rast, id)                            
   rast <- cut_ortofoto_raster(rast, ext)                            
