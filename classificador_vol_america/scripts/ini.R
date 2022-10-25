@@ -127,6 +127,11 @@ save_ortofotos_to_rasters <- function(n=NULL){
   corrupted <- get_corrupted_ids() 
   
   ids <- read_quad_ids_not_exported(notin=append(done, corrupted))
+  
+  if(dir.exists("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula")){
+   ids <- rev(ids)
+  } 
+  
   if(!is.null(n)){
     ids <- ids[1:n]
   }else{
