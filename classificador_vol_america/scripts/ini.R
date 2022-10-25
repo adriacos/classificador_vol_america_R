@@ -222,28 +222,20 @@ vectorise_rasters_all <- function(n=NULL){
 
 clump_vectors_all <- function(){
   print("clump_vectors_all")
-  #cores <- detectCores()
   cores <- 5
-  #ids <- get_ids_smoothen_vectorised_not_clumped()
   vects <- get_vectorised_vectors()
-  vects <- vects[order(sapply(vects, nrow), decreasing=T)]
+  vects <- vects[order(sapply(vects, nrow), decreasing=F)]
   ids <- names(vects)
-  
-  #ids <- get_vectorised_ids()
   
   if(length(ids)==0){
     return(NULL)
   }
   print(ids)
-  #ids <- split(ids, ceiling(seq_along(ids)/5))
-  #for(ids_5 in ids){
     cl <- makeCluster(cores, outfile="log_clump.txt")
     clusterEvalQ(cl, list(source("./classificador_vol_america/scripts/clump_vector.R"), library(rgdal), library(rgeos), library(stringr), library(maptools)))
     clusterExport(cl, c("ids", "clump_vector"), envir = environment())
     parLapplyLB(cl, ids, clump_vector)
-    #clusterMap(cl, clump_vector, ids)
     stopCluster(cl)
-  #}
 }
 
 auto_class_BCN_all <- function(){

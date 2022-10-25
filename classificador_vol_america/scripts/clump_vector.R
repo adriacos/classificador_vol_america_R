@@ -295,6 +295,9 @@ cut_clumped_by_extent <- function(vect, id, buffer=0){
   vect
 }
 
+
+
+
 clump_vector_global <- function(){
   
   print("clump_vector")
@@ -356,6 +359,10 @@ clump_vector_global <- function(){
     
     vect.min <- vect.min[which.min(vect.min$area),]
     
+    if(vect.min$id==1150){
+      break
+    }
+    
     if(length(vect.min)==0){
       print("FINISH")
       break()
@@ -394,33 +401,75 @@ clump_vector_global <- function(){
     }
     vect.min.neighbors <- vect[vect$id %in% str_split(vect.min$neighbors, ",")[[1]],]
     vect.min.neighbors <- vect.min.neighbors[vect.min.neighbors$id!=vect.min$id,]
+    vect.min.neighbors <- vect.min.neighbors[vect.min.neighbors$ori!=vect.min$ori,]
     
-    vect.min.neighbors.min <- vect.min.neighbors[
-      which.min((abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
-      ,]
-    
-    if(first500 ==F && vect.min$area >= 200 && vect.min$area < 500 && abs(vect.min.neighbors.min$DN-vect.min$DN)>2){
-      vect[vect$id==vect.min$id,"toignore"] <- T
-      next()
-    }else if(vect.min$area >= 500 && vect.min$area < 3000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.7){
-      vect[vect$id==vect.min$id,"toignore"] <- T
-      next()
-    }else if(vect.min$area >= 3000 && vect.min$area < 6000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.4){
-      vect[vect$id==vect.min$id,"toignore"] <- T
-      next()
-    }else if(vect.min$area >= 6000 && vect.min$area < 9000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.1){
-      vect[vect$id==vect.min$id,"toignore"] <- T
-      next()
-    } else if(vect.min$area >= 9000 && vect.min$area < 12000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.8){
-      vect[vect$id==vect.min$id,"toignore"] <- T
-      next()
-    } else if(vect.min$area >= 12000 && vect.min$area < 15000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.5){
-      vect[vect$id==vect.min$id,"toignore"] <- T
-      next()
-    } else if(vect.min$area >= 15000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.2){
+    if(length(vect.min.neighbors) == 0){
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     }
+    
+    ignore <- F
+    for(i in 1:length(vect.min.neighbors)){
+      # vect.min.neighbors.min <- vect.min.neighbors[
+      #   which.min((abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
+      #   ,]
+      
+      if(vect.min$area < 500 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>2.2){
+        if(i>=length(vect.min.neighbors[i,])){
+          vect[vect$id==vect.min$id,"toignore"] <- T
+          ignore <- T
+          break()
+        }
+        next()
+      }else if(vect.min$area >= 500 && vect.min$area < 3000 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>1.9){
+        if(i>=length(vect.min.neighbors[i,])){
+          vect[vect$id==vect.min$id,"toignore"] <- T
+          ignore <- T
+          break()
+        }
+        next()
+      }else if(vect.min$area >= 3000 && vect.min$area < 6000 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>1.5){
+        if(i>=length(vect.min.neighbors[i,])){
+          vect[vect$id==vect.min$id,"toignore"] <- T
+          ignore <- T
+          break()
+        }
+        next()
+      }else if(vect.min$area >= 6000 && vect.min$area < 9000 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>1.3){
+        if(i>=length(vect.min.neighbors[i,])){
+          vect[vect$id==vect.min$id,"toignore"] <- T
+          ignore <- T
+          break()
+        }
+        next()
+      } else if(vect.min$area >= 9000 && vect.min$area < 12000 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>0.9){
+        if(i>=length(vect.min.neighbors[i,])){
+          vect[vect$id==vect.min$id,"toignore"] <- T
+          ignore <- T
+          break()
+        }
+        next()
+      } else if(vect.min$area >= 12000 && vect.min$area < 15000 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>0.7){
+        if(i>=length(vect.min.neighbors[i,])){
+          vect[vect$id==vect.min$id,"toignore"] <- T
+          ignore <- T
+          break()
+        }
+        next()
+      } else if(vect.min$area >= 15000 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>0.4){
+        if(i>=length(vect.min.neighbors[i,])){
+          vect[vect$id==vect.min$id,"toignore"] <- T
+          ignore <- T
+          break()
+        }
+        next()
+      }else{
+        vect.min.neighbors.min <- vect.min.neighbors[i,]
+        break()
+      }
+    }
+    
+    if(ignore==T){next()}
     
     
     
