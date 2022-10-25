@@ -16,10 +16,10 @@ library(smoothr)
 clump_vector <- function(id){
   
   print("clump_vector")
-  dir <- "./classificador_vol_america/vect/clumped/"
+  dir <- "./classificador_vol_america/vect/10km/clumped/"
   
-  vect <- readOGR(paste("./classificador_vol_america/vect/vectorised/", id, ".shp", sep=""))
-  rast <- raster(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
+  vect <- readOGR(paste("./classificador_vol_america/vect/10km/vectorised/", id, ".shp", sep=""))
+  rast <- raster(paste("./classificador_vol_america/rasters/10km/exported/", id, ".tif", sep=""))
   
   #treure àrea
   v <- vect(vect)
@@ -243,7 +243,7 @@ clump_vector <- function(id){
   print(paste("NO15000:", min(no15000, na.rm=T)))
   
   
-  rast <- raster(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
+  rast <- raster(paste("./classificador_vol_america/rasters/10km/exported/", id, ".tif", sep=""))
   #vect$tpi <- calc_TPI_by_polygons(vect, rast) 
   
   ex <- exact_extract(rast, vect, "stdev")
@@ -270,11 +270,11 @@ clump_vector <- function(id){
   rm(vect.min.neighbors.min)
   
   save_id_done(id)
-  file.remove(paste("./classificador_vol_america/vect/vectorised/", id, ".shp", sep=""))
-  file.remove(paste("./classificador_vol_america/vect/vectorised/", id, ".dbf", sep=""))
-  file.remove(paste("./classificador_vol_america/vect/vectorised/", id, ".shx", sep=""))
-  file.remove(paste("./classificador_vol_america/vect/vectorised/", id, ".prj", sep=""))
-  file.remove(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
+  file.remove(paste("./classificador_vol_america/vect/10km/vectorised/", id, ".shp", sep=""))
+  file.remove(paste("./classificador_vol_america/vect/10km/vectorised/", id, ".dbf", sep=""))
+  file.remove(paste("./classificador_vol_america/vect/10km/vectorised/", id, ".shx", sep=""))
+  file.remove(paste("./classificador_vol_america/vect/10km/vectorised/", id, ".prj", sep=""))
+  file.remove(paste("./classificador_vol_america/rasters/10km/exported/", id, ".tif", sep=""))
   
   gc()
 }
@@ -298,7 +298,7 @@ cut_clumped_by_extent <- function(vect, id, buffer=0){
 clump_vector_global <- function(){
   
   print("clump_vector")
-  # dir <- "./classificador_vol_america/vect/clumped/"
+  # dir <- "./classificador_vol_america/vect/10km/clumped/"
   
   vect <- merge_clumped()
   ids <- get_clumped_ids()
@@ -498,7 +498,7 @@ clump_vector_global <- function(){
     }
   }
   
-  # rast <- raster(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
+  # rast <- raster(paste("./classificador_vol_america/rasters/10km/exported/", id, ".tif", sep=""))
   #vect$tpi <- calc_TPI_by_polygons(vect, rast) 
   
   # ex <- exact_extract(rast, vect, "stdev")
@@ -521,7 +521,7 @@ clump_vector_global <- function(){
   # vect.towrite <- vect.towrite[,c()]
   # vect.towrite$fid <- vect$id
   #vect.towrite <- vect.towrite[,-3]
-  writeOGR(vect.towrite, "./classificador_vol_america/vect/global", "global_clmp", driver = "ESRI Shapefile", overwrite_layer = TRUE)  
+  writeOGR(vect.towrite, "./classificador_vol_america/vect/10km/global", "global_clmp", driver = "ESRI Shapefile", overwrite_layer = TRUE)  
   rm(vect.towrite)
   
   
@@ -535,11 +535,11 @@ clump_vector_global <- function(){
   rm(vect.min.neighbors.min)
   
   # save_id_done(id)
-  # file.remove(paste("./classificador_vol_america/vect/vectorised/", id, ".shp", sep=""))
-  # file.remove(paste("./classificador_vol_america/vect/vectorised/", id, ".dbf", sep=""))
-  # file.remove(paste("./classificador_vol_america/vect/vectorised/", id, ".shx", sep=""))
-  # file.remove(paste("./classificador_vol_america/vect/vectorised/", id, ".prj", sep=""))
-  # file.remove(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
+  # file.remove(paste("./classificador_vol_america/vect/10km/vectorised/", id, ".shp", sep=""))
+  # file.remove(paste("./classificador_vol_america/vect/10km/vectorised/", id, ".dbf", sep=""))
+  # file.remove(paste("./classificador_vol_america/vect/10km/vectorised/", id, ".shx", sep=""))
+  # file.remove(paste("./classificador_vol_america/vect/10km/vectorised/", id, ".prj", sep=""))
+  # file.remove(paste("./classificador_vol_america/rasters/10km/exported/", id, ".tif", sep=""))
   
   gc()
 }

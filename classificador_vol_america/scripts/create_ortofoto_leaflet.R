@@ -15,7 +15,7 @@ create_ortofoto_leaflet <- function(lat, long){
 	df <- data.frame(lat=lat, long=long)
 	m <- leaflet(
 	 width = 992, height = 744,
-	  options=list(center = c(lat, long), zoom = 16, zoomControl=FALSE, attributionControl=FALSE)
+	  options=list(center = c(lat, long), zoom = 13, zoomControl=FALSE, attributionControl=FALSE)
 	)
 	
 	m <- addWMSTiles(m, 
@@ -35,6 +35,6 @@ create_ortofoto_leaflet <- function(lat, long){
 # 		layerId = "1956", 
 # 		group = "1956",
 # 	)
-	Sys.sleep(1)
+	Sys.sleep(12)
 	return(m)
 }

@@ -4,8 +4,8 @@ library(nnet)
 train <- function(){
   name <- "P_00001-Barcelona-Guardiola de Berguedà"
   
-  vect <- readOGR("./classificador_vol_america/vect/classified/P_00002-Barcelona-Bagà_class.shp")
-  vect_pred <- readOGR("./classificador_vol_america/vect/metrics/P_00001-Barcelona-Guardiola de Berguedà_class.shp")
+  vect <- readOGR("./classificador_vol_america/vect/10km/classified/P_00002-Barcelona-Bagà_class.shp")
+  vect_pred <- readOGR("./classificador_vol_america/vect/10km/metrics/P_00001-Barcelona-Guardiola de Berguedà_class.shp")
   #data <- as(vect, "data.frame")
   #model = multinom(class ~ mn+std+elv+slp+mtp+apt+mpt+rpl+lat+lng+are+per+shp+n_mn_mn+n_sd_mn+n_mxdf_mn+n_mn_mdn+n_mn_std+n_mn_slp+n_mn_shp+n_std_shp, 
   #                 data = data, trace = FALSE)
@@ -36,6 +36,6 @@ train <- function(){
   # 
   # print(paste("total: ", total, ", good: ", good, ", na: ", na, ", bad: ", bad, sep=""))
   
-  writeOGR(vect_pred, "./classificador_vol_america/vect/classified", paste(name, "_pred", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE) 
+  writeOGR(vect_pred, "./classificador_vol_america/vect/10km/classified", paste(name, "_pred", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE) 
   
 }

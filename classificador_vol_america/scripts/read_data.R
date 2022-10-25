@@ -2,13 +2,13 @@
 source("./classificador_vol_america/scripts/project.R")
 
 read_ortofotos <- function(ids){
-  loc <- sapply(ids, function(id) paste("./classificador_vol_america/rasters/all/", id, ".tif", sep=""))
+  loc <- sapply(ids, function(id) paste("./classificador_vol_america/rasters/10km/all/", id, ".tif", sep=""))
   lapply(loc, raster)
 }
 
 read_quad_ids_not_exported <- function(notin=NULL){
   all <- read_quad_ids(notin)
-  exported <- read_quad_ids_exported()
+  exported <- read_quad_ids_exported_10km()
   all[!(all %in% exported)]
 }
 
@@ -22,19 +22,19 @@ get_quad_vect <- function(ids=NULL){
   if(is.null(ids)){
     if(dir.exists("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula")){
       #return(reproject_EPSG_25831_vect(readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/1kmx1km_BCN.gpkg")))
-      return(readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/1kmx1km_BCN.gpkg"))
+      return(readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/10kmx10km_BCN.gpkg"))
     } else if(dir.exists("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula")){
       #return(reproject_EPSG_25831_vect(readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/1kmx1km_BCN.gpkg")))
-      return(readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/1kmx1km_BCN.gpkg"))
+      return(readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/10kmx10km_BCN.gpkg"))
     }else {
       print("ALARM - no quadricula directory found")
       stop()
     }
   }else{
     if(dir.exists("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula")){
-      vect <- readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/1kmx1km_BCN.gpkg")
+      vect <- readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/10kmx10km_BCN.gpkg")
     } else if(dir.exists("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula")){
-      vect <- readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/1kmx1km_BCN.gpkg")
+      vect <- readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/10kmx10km_BCN.gpkg")
     }else {
       print("ALARM - no quadricula directory found")
       stop()
@@ -46,8 +46,8 @@ get_quad_vect <- function(ids=NULL){
   
 }
 
-read_quad_ids_exported <- function(){
-  tryCatch(read.table("./classificador_vol_america/rasters/ids_exported.txt")[,1],
+read_quad_ids_exported_10km <- function(){
+  tryCatch(read.table("./classificador_vol_america/rasters/10km/ids_exported_10km.txt")[,1],
            error = function(e)
              return(NULL))
 }
@@ -56,7 +56,7 @@ read_quad_ids_exported <- function(){
 
 
 read_1956_diba_rast <- function(id){
-  raster(paste("./classificador_vol_america/rasters/diba/", id, ".tif", sep=""))
+  raster(paste("./classificador_vol_america/rasters/10km/diba/", id, ".tif", sep=""))
 }
 
 # read_plots <- function(){
@@ -70,25 +70,25 @@ read_1956_diba_rast <- function(id){
 # }
 
 get_done_ids <- function(){
-  tryCatch(read.table("./classificador_vol_america/ids_done.txt")[,1],
+  tryCatch(read.table("./classificador_vol_america/ids_done_10km.txt")[,1],
            error = function(e)
              return(NULL))
 }
 
 get_corrupted_ids <- function(){
-  tryCatch(read.table("./classificador_vol_america/rasters/ids_corrupted.txt")[,1],
+  tryCatch(read.table("./classificador_vol_america/rasters/10km/ids_corrupted_10km.txt")[,1],
            error = function(e)
              return(NULL))
 }
 
 get_classified_ids <- function(){
   print("get_classified_ids")
-  files <- list.files("./classificador_vol_america/vect/classified", pattern = "\\.shp$")
+  files <- list.files("./classificador_vol_america/vect/10km/classified", pattern = "\\.shp$")
   files <- sub(".shp","",files)
   files
 }
 get_in_progress_classification_ids <- function(){
-  files <- list.files("./classificador_vol_america/vect/classified/inprogress", pattern = "\\.shp$")
+  files <- list.files("./classificador_vol_america/vect/10km/classified/inprogress", pattern = "\\.shp$")
   files <- sub(".shp","",files)
   files
 }
@@ -99,18 +99,18 @@ get_metrics_vectors <- function(){
 }
 
 get_metrics_vector <- function(id){
-  readOGR(paste("./classificador_vol_america/vect/metrics/", id, ".shp"))
+  readOGR(paste("./classificador_vol_america/vect/10km/metrics/", id, ".shp"))
 }
 
 get_metrics_ids <- function(){
-  files <- list.files("./classificador_vol_america/vect/metrics/", pattern = "\\.shp$")
+  files <- list.files("./classificador_vol_america/vect/10km/metrics/", pattern = "\\.shp$")
   files <- sub(".shp","",files)
   files <- sub("_mtcs","",files)
   files
 }
 
 get_clumped_ids <- function(){
-  files <- list.files("./classificador_vol_america/vect/clumped/", pattern = "\\.shp$")
+  files <- list.files("./classificador_vol_america/vect/10km/clumped/", pattern = "\\.shp$")
   files <- sub(".shp","",files)
   files <- sub("_clmp","",files)
   files
@@ -134,7 +134,7 @@ get_metrics_not_classified_ids <- function(){
 
 get_exported_ids <- function(){
   print("get_exported_ids")
-  sub(".tif", "", list.files("./classificador_vol_america/rasters/exported", pattern = "\\.tif$"), "")
+  sub(".tif", "", list.files("./classificador_vol_america/rasters/10km/exported", pattern = "\\.tif$"), "")
 }
 
 get_exported_not_smoothen_ids <- function(){
@@ -162,25 +162,25 @@ get_vectorised_ids <- function(){
 get_clumped_vectors <- function(){
   print("get_clumped_vectors")
   ids <- get_clumped_ids()
-  loc <- sapply(ids, function(id) paste("./classificador_vol_america/vect/clumped/", id, "_clmp.shp", sep=""))
+  loc <- sapply(ids, function(id) paste("./classificador_vol_america/vect/10km/clumped/", id, "_clmp.shp", sep=""))
   lapply(loc, readOGR)
 }
 
 get_vectorised_vectors <- function(){
   print("get_vectorised_vectors")
   ids <- get_vectorised_ids()
-  loc <- sapply(ids, function(id) paste("./classificador_vol_america/vect/vectorised/", id, ".shp", sep=""))
+  loc <- sapply(ids, function(id) paste("./classificador_vol_america/vect/10km/vectorised/", id, ".shp", sep=""))
   lapply(loc, readOGR)
 }
 
 get_vectorised_files <- function(){
   print("get_vectorised_files")
-  list.files("./classificador_vol_america/vect/vectorised", pattern = "\\.shp$")
+  list.files("./classificador_vol_america/vect/10km/vectorised", pattern = "\\.shp$")
 }
 
 get_smoothen_ids <- function(){
   print("get_smoothen_ids")
-  files <- list.files("./classificador_vol_america/rasters/smoothen", pattern = "\\_smth.tif$")
+  files <- list.files("./classificador_vol_america/rasters/10km/smoothen", pattern = "\\_smth.tif$")
   ids <- sub("_smth.tif","",files)
   ids
 }

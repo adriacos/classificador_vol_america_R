@@ -27,33 +27,33 @@ updateIFN_VA_Class <-function(register){
 }
 
 save_classified_vector <- function(name, vectors){
-  writeOGR(vectors, "./classificador_vol_america/vect/classified/", paste(name, "_class", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE) 
+  writeOGR(vectors, "./classificador_vol_america/vect/10km/classified/", paste(name, "_class", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE) 
 }
 save_in_progress_classification_vector <- function(name, vectors){
-  writeOGR(vectors, "./classificador_vol_america/vect/classified/inprogress/", name, driver = "ESRI Shapefile", overwrite_layer = TRUE)
+  writeOGR(vectors, "./classificador_vol_america/vect/10km/classified/inprogress/", name, driver = "ESRI Shapefile", overwrite_layer = TRUE)
 }
 
 save_metrics_vector <- function(name, vectors){
-  writeOGR(vectors, "./classificador_vol_america/vect/metrics/", paste(name, "_mtcs", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE) 
+  writeOGR(vectors, "./classificador_vol_america/vect/10km/metrics/", paste(name, "_mtcs", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE) 
 }
 
 save_id_exported <- function(id){
-  ids <- read_quad_ids_exported()
+  ids <- read_quad_ids_exported_10km()
   if(is.null(ids)){
-    write.table(id, "./classificador_vol_america/rasters/ids_exported.txt")
+    write.table(id, "./classificador_vol_america/rasters/10km/ids_exported_10km.txt")
   }else{
     ids <- append(ids, id)
-    write.table(ids, "./classificador_vol_america/rasters/ids_exported.txt")
+    write.table(ids, "./classificador_vol_america/rasters/10km/ids_exported_10km.txt")
   }
 }
 
 save_id_corrupted <- function(id){
   ids <- get_corrupted_ids()
   if(is.null(ids)){
-    write.table(id, "./classificador_vol_america/rasters/ids_corrupted.txt")
+    write.table(id, "./classificador_vol_america/rasters/10km/ids_corrupted_10km.txt")
   }else{
     ids <- append(ids, id)
-    write.table(ids, "./classificador_vol_america/rasters/ids_corrupted.txt")
+    write.table(ids, "./classificador_vol_america/rasters/10km/ids_corrupted_10km.txt")
   }
 }
 
@@ -63,16 +63,16 @@ remove_id_corrupted <- function(id){
     return(FALSE)
   }else{
     ids <- ids[ids!=id]
-    write.table(ids, "./classificador_vol_america/rasters/ids_corrupted.txt")
+    write.table(ids, "./classificador_vol_america/rasters/10km/ids_corrupted_10km.txt")
   }
 }
 
 save_id_done <- function(id){
   ids <- get_done_ids()
   if(is.null(ids)){
-    write.table(id, "./classificador_vol_america/ids_done.txt")
+    write.table(id, "./classificador_vol_america/ids_done_10km.txt")
   }else{
     ids <- append(ids, id)
-    write.table(ids, "./classificador_vol_america/ids_done.txt")
+    write.table(ids, "./classificador_vol_america/ids_done_10km.txt")
   }
 }

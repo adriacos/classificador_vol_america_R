@@ -25,15 +25,15 @@ vectorise_raster <- function(rast){
 
 vectorise_save_smoothen_raster <- function(id){
   print("vectorise_save_smoothen_raster")
-  file <- paste("./classificador_vol_america/rasters/smoothen/", id, "_smth.tif", sep="")
+  file <- paste("./classificador_vol_america/rasters/10km/smoothen/", id, "_smth.tif", sep="")
   vect <- vectorise_raster_by_url(file)
   save_vectorised_raster(vect, id)
-  file.remove(paste("./classificador_vol_america/rasters/smoothen/", id, "_smth.tif", sep=""))
-  file.remove(paste("./classificador_vol_america/rasters/smoothen/", id, "_smth.tif.aux", sep=""))
+  file.remove(paste("./classificador_vol_america/rasters/10km/smoothen/", id, "_smth.tif", sep=""))
+  file.remove(paste("./classificador_vol_america/rasters/10km/smoothen/", id, "_smth.tif.aux", sep=""))
 } 
 
 save_vectorised_raster <- function(vect, name){
-  writeOGR(vect, "./classificador_vol_america/vect/vectorised", name, driver = "ESRI Shapefile", overwrite_layer = TRUE) 
+  writeOGR(vect, "./classificador_vol_america/vect/10km/vectorised", name, driver = "ESRI Shapefile", overwrite_layer = TRUE) 
 }
 
 vectorise_raster_ <- function(rast){

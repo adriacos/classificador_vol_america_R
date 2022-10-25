@@ -130,7 +130,7 @@ save_ortofotos_to_rasters <- function(n=NULL){
   if(!is.null(n)){
     ids <- ids[1:n]
   }else{
-    ids <- ids[1:100]
+    ids <- ids[1:1]
   }
   rm(done)
   vects <- get_quad_vect(ids)

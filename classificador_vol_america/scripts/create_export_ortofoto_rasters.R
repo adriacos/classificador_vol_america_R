@@ -41,11 +41,11 @@ create_export_ortofoto_raster <- function(id, lat, lng, vect){
 }
 
 save_ortofoto_raster_tight <- function(rast, id){
-  writeRaster(rast, paste("./classificador_vol_america/rasters/all/", id, ".tif", sep=""), format="GTiff", overwrite=TRUE)
+  writeRaster(rast, paste("./classificador_vol_america/rasters/10km/all/", id, ".tif", sep=""), format="GTiff", overwrite=TRUE)
 }
 
 save_ortofoto_raster_buffer <- function(rast, id){
-  writeRaster(rast, paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""), format="GTiff", overwrite=TRUE)
+  writeRaster(rast, paste("./classificador_vol_america/rasters/10km/exported/", id, ".tif", sep=""), format="GTiff", overwrite=TRUE)
 }
 
 

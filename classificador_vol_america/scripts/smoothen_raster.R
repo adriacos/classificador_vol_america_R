@@ -8,10 +8,10 @@ library(parallel)
 smoothen_raster <- function(id){
   print(paste("smoothen_raster", id, Sys.time(),sep="-"))
 
-  dir <- paste("./classificador_vol_america/rasters/smoothen/",id, sep="")
+  dir <- paste("./classificador_vol_america/rasters/10km/smoothen/",id, sep="")
   
   i_st <- 1
-  rast <- raster(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
+  rast <- raster(paste("./classificador_vol_america/rasters/10km/exported/", id, ".tif", sep=""))
 
   if(dir.exists(dir)){
     list <- list.files(dir, pattern = "\\.tif$")
@@ -41,10 +41,10 @@ smoothen_raster <- function(id){
   stopCluster(clust)
   
   rast <- rast*10
-  res <- writeRaster(rast,paste("./classificador_vol_america/rasters/smoothen/",id,"_smth.tif", sep=""), overwrite=TRUE)
+  res <- writeRaster(rast,paste("./classificador_vol_america/rasters/10km/smoothen/",id,"_smth.tif", sep=""), overwrite=TRUE)
   if(exists("res")){
     unlink(dir, recursive = TRUE)
-    #file.remove(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
+    #file.remove(paste("./classificador_vol_america/rasters/10km/exported/", id, ".tif", sep=""))
   }
   rast
 }
@@ -68,7 +68,7 @@ smoothen_raster_ <- function(rast, seed=8){
 smoothen_raster_dp <- function(id, threshold=0.15){
   print(paste("smoothen_raster", id, Sys.time(),sep="-"))
   
-  rast <- raster(paste("./classificador_vol_america/rasters/", id, ".tif", sep=""))
+  rast <- raster(paste("./classificador_vol_america/rasters/10km/", id, ".tif", sep=""))
   
   raster_split <- splitRaster(rast, 2,2, buffer=c(2,2))
   
@@ -116,7 +116,7 @@ smoothen_raster_dp <- function(id, threshold=0.15){
   rast <- mean(rast_1, rast_2, rast_3, na.rm=T)
   
   rast <- rast*10
-  res <- writeRaster(rast,paste("./classificador_vol_america/rasters/smoothen/",id,"_smth_dp.tif", sep=""), overwrite=TRUE)
+  res <- writeRaster(rast,paste("./classificador_vol_america/rasters/10km/smoothen/",id,"_smth_dp.tif", sep=""), overwrite=TRUE)
   print(paste("smoothen_raster END", id, Sys.time(),sep="-"))
   rast
 }

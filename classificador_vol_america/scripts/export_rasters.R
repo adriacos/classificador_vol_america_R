@@ -22,14 +22,14 @@ export_map <- function(m, id){
   #rast <- project_EPSG_25831_rast(rast)
   #proj4string(rast) <- CRS("+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs")
   
-  #writeRaster(rast, paste("./classificador_vol_america/rasters/", id, "-", province, "-", municipality, ".tif", sep=""), format="GTiff", overwrite=TRUE)
+  #writeRaster(rast, paste("./classificador_vol_america/rasters/10km/", id, "-", province, "-", municipality, ".tif", sep=""), format="GTiff", overwrite=TRUE)
   unlink(dir, recursive = T)
   rast
 }
 
 
 save_1956_diba_map<- function(rast, id){
-  writeRaster(rast, paste("./classificador_vol_america/rasters/diba/", id, ".tif", sep=""), format="GTiff", overwrite=TRUE)
+  writeRaster(rast, paste("./classificador_vol_america/rasters/10km/diba/", id, ".tif", sep=""), format="GTiff", overwrite=TRUE)
 }
 
 getBox <- function(m){

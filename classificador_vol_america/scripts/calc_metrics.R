@@ -15,8 +15,8 @@ library(geosphere)
 calc_metrics <- function(name, elev, pend, clima.mean_temp, clima.amp_term, clima.mean_prec, clima.reg_pluv){
   print("calc_metrics")
   print(Sys.time())
-  vect <- readOGR(paste("./classificador_vol_america/vect/clumped/", name, "_clmp.shp", sep=""))
-  rast <- raster(paste("./classificador_vol_america/rasters/", name, ".tif", sep=""))
+  vect <- readOGR(paste("./classificador_vol_america/vect/10km/clumped/", name, "_clmp.shp", sep=""))
+  rast <- raster(paste("./classificador_vol_america/rasters/10km/", name, ".tif", sep=""))
   
   vect$id <- as.numeric(row.names(vect))
   if(vect[1,]$id==0){
