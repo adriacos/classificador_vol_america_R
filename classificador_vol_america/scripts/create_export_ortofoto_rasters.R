@@ -6,14 +6,16 @@ source("./classificador_vol_america/scripts/save_data.R")
 
 library(raster)
 
-create_export_ortofoto_raster <- function(id, lat, lng, vect){
+create_export_ortofoto_raster <- function(id, lat, lng){
   print("create_export_map")
   print(id)
   map <- create_ortofoto_leaflet(lat, lng)
   rast <- export_map(map, id)
   
+  rm(map)
+  
   #check if there are holes
-  if(max(table(values(rast))/length(rast)) > 0.10){
+  if(max(table(values(rast))/length(rast)) > 0.08){
     print(paste("Map with id ", id, " was corrupted at extraction", sep=""))
     save_id_corrupted(id)
     return(NULL)

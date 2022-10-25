@@ -16,7 +16,7 @@ calc_metrics <- function(name, elev, pend, clima.mean_temp, clima.amp_term, clim
   print("calc_metrics")
   print(Sys.time())
   vect <- readOGR(paste("./classificador_vol_america/vect/clumped/", name, "_clmp.shp", sep=""))
-  rast <- raster(paste("./classificador_vol_america/rasters/", name, ".tif", sep=""))
+  rast <- raster(paste("./classificador_vol_america/rasters/all/", name, ".tif", sep=""))
   
   vect$id <- as.numeric(row.names(vect))
   if(vect[1,]$id==0){
@@ -188,12 +188,12 @@ calc_squaredness <- function(vect){
   #- Ajuntar tots els clumpeds de CAT/BCN, tornar a passar clumped (però trigarà molt), calcular mètriques i, si cal, tornar a tallar
   #- Treure des d'un principi els rasters per quadrícules de 2kmx2km amb centre als centroides, calcular mètriques i retallar a 1x1km
   v <- vect
-  sf <- st_as_sf(vect)
+  sf <- st_as_sf(v)
   smp <- st_simplify(sf, preserveTopology = T, dTolerance = 2)
   v <- as_Spatial(smp)
   
   vt <- vect(vect)
-  vect$peri <- perim(vt)
+  v$peri <- perim(vt)
   rm(vt)
   
   y <- fortify(v) 
@@ -202,7 +202,7 @@ calc_squaredness <- function(vect){
     v[i,"vtx"] <- ag[ag$id==i,2] 
   }
   #v$sqr_a <- v$vtx/v$area
-  sqr_p <- v$vtx/v$peri
+  sqr_p <- 1/(v$vtx/sqrt(v$peri))
 }
 
 calc_longness <- function(vect){
