@@ -231,7 +231,7 @@ clump_vectors_all <- function(){
   print("clump_vectors_all")
   cores <- 5
   vects <- get_vectorised_vectors()
-  vects <- vects[order(sapply(vects, nrow), decreasing=F)]
+  vects <- vects[order(sapply(vects, nrow), decreasing=T)]
   ids <- names(vects)
   
   if(length(ids)==0){

@@ -20,11 +20,73 @@ merge_clumped <- function(){
 }
 
 merge_vectors <- function(vector_list){
-  #vector_list <- get_clumped_vectors()
+  # vector_list <- get_clumped_vectors()
+  # 
+  # for(i in 1:length(vector_list)){
+  #   vector_list[[i]]$ori <- names(vector_list)[i]
+  # }
+  # 
+  # combos_v <- matrix(NA, 0, 2)
+  # 
+  # for(i in 1:length(vector_list)){
+  #   v1 <- vector_list[[i]]
+  #   for(ii in 1:length(vector_list)){
+  #     if(i==ii){next()}
+  #     v2 <- vector_list[[ii]]
+  #     if(gIntersects(v1, v2, byid = FALSE)){
+  #       combos_v <- rbind(combos_v, c(v1$ori[[1]], v2$ori[[1]]))
+  #     }
+  #     v1 <- vector_list[[i]]
+  #   }
+  # }
+  # 
+  # for(k in 1:length(vector_list)){
+  #   vector_list[[k]]$id <- as.numeric(row.names(vector_list[[k]]))
+  #   if(vector_list[[k]][1,]$id==0){
+  #     vector_list[[k]]$id <- vector_list[[k]]$id +1
+  #   }
+  # }
+  # 
+  # 
+  # for (k in 1:nrow(combos_v)){
+  #   vect1 <- vector_list[combos_v[k,1]][[1]]
+  #   vect2 <- vector_list[combos_v[k,2]][[1]]
+  #   print(paste("vect1:", vect1$ori[1], "vect2:", vect2$ori[1]))
+  #   for(i in 1:nrow(vect1)){
+  #     v1 <- vect1[vect1$id==i,]
+  #     print(paste("v1:", i))
+  #     for(ii in 1:nrow(vect2)){
+  #       v2 <- vect2[vect2$id==ii,]
+  #       print(paste("v2:", ii))
+  #       if(gIntersects(v1, v2, byid = FALSE)){
+  #         vect1 <- vect1[!(vect1$id==i),]
+  #         vect1 <- rbind(vect1, v1-v2)
+  #         v1 <- vect1[vect1$id==i,]
+  #       }
+  #     }
+  #   }
+  #   vector_list[combos_v[k,1]][[1]] <- vect1
+  # }
+  # rm(v1)
+  # rm(v2)
+  # rm(vect1)
+  # rm(vect2)
+  # rm(i)
+  # rm(ii)
+  # rm(k)
+  # 
+  # 
+  # vects <- do.call(rbind, vector_list)
+  # writeOGR(vects, "./classificador_vol_america/vect/global", "global", driver = "ESRI Shapefile", overwrite_layer = TRUE)
+  # return(vects)
   
-  for(i in 1:length(vector_list)){
-    vector_list[[i]]$ori <- names(vector_list)[i]
-  }
+  
+  
+  #mirar quins vectors_list són contigus amb quins, apuntar-ho
+  #per a cada vector_list, agafar tots els vect
+  #per a cada vect, restar-li tots els vects dels vectors_list adjacents
+  #ajuntar tots els vector_list
+  
   
   for(i in 1:length(vector_list)){
     v1 <- vector_list[[i]]

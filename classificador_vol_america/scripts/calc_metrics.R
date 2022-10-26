@@ -189,6 +189,8 @@ calc_squaredness <- function(vect){
   #- Treure des d'un principi els rasters per quadrícules de 2kmx2km amb centre als centroides, calcular mètriques i retallar a 1x1km
   v <- vect
   sf <- st_as_sf(v)
+  
+  #es podria fer que la tolerància depengués del perímetre, segons alguna fórmula que hauria de provar
   smp <- st_simplify(sf, preserveTopology = T, dTolerance = 2)
   v <- as_Spatial(smp)
   
@@ -202,7 +204,9 @@ calc_squaredness <- function(vect){
     v[i,"vtx"] <- ag[ag$id==i,2] 
   }
   #v$sqr_a <- v$vtx/v$area
+  
   sqr_p <- 1/(v$vtx/sqrt(v$peri))
+  sqr_p <- 1/(v$vtx/log(v$peri))
 }
 
 calc_longness <- function(vect){

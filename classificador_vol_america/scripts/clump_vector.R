@@ -331,14 +331,39 @@ clump_vector_global <- function(){
   rm(rast)
   gc()
   
+  
+  #gTouches was not returning all touching vectors, I don't know why
   time <- Sys.time()
-  neighbours <- gTouches(vect, returnDense=FALSE, byid=TRUE, )
-  neighbours <- sapply(neighbours,paste,collapse=",")
+  vect$neighbors <- ""
+  vect$border <- F
+  for(i in 1:nrow(vect)){
+    for(ii in 1:nrow(vect)){
+      if (i==ii){
+        next()
+      }
+      if(gIntersects(vect[i,], vect[ii,], byid = F)==T){
+        if(vect[i,]$neighbors == ""){
+          vect[i,"neighbors"] <- vect[ii,]$id
+        }else{
+          vect[i,"neighbors"] <- paste(vect[i,]$neighbors, vect[ii,]$id, sep=",")
+        }
+        if(vect[i,]$ori != vect[ii,]$ori){
+          vect[i,"border"] <- T
+          vect[ii,"border"] <- T
+        }
+      }
+    }
+  }
   print(as.numeric(difftime(Sys.time(),time,units="secs")))
   
-  vect$neighbors <- neighbours
-  rm(neighbours)
-  gc()
+  # time <- Sys.time()
+  # neighbours <- gTouches(vect, returnDense=FALSE, byid=TRUE, )
+  # neighbours <- sapply(neighbours,paste,collapse=",")
+  # print(as.numeric(difftime(Sys.time(),time,units="secs")))
+  # 
+  # vect$neighbors <- neighbours
+  # rm(neighbours)
+  # gc()
   
   vect$DN <- as.numeric(vect$DN)
   vect$area <- abs(vect$area)
@@ -353,21 +378,19 @@ clump_vector_global <- function(){
   first9000 <- FALSE
   first12000 <- FALSE
   first15000 <- FALSE
+  
   repeat{
     
     vect.min <- vect[vect$toignore==FALSE,]
-    
+    vect.min <- vect.min[vect.min$border==TRUE,]
     vect.min <- vect.min[which.min(vect.min$area),]
     
-    if(vect.min$id==1150){
-      break
-    }
     
     if(length(vect.min)==0){
       print("FINISH")
       break()
     }
-    
+
     if(vect.min$area >= 500){
       if(first500==F){
         vect$toignore <- F
@@ -401,7 +424,8 @@ clump_vector_global <- function(){
     }
     vect.min.neighbors <- vect[vect$id %in% str_split(vect.min$neighbors, ",")[[1]],]
     vect.min.neighbors <- vect.min.neighbors[vect.min.neighbors$id!=vect.min$id,]
-    vect.min.neighbors <- vect.min.neighbors[vect.min.neighbors$ori!=vect.min$ori,]
+    vect.min.neighbors <- vect.min.neighbors[vect.min.neighbors$border==T,]
+    
     
     if(length(vect.min.neighbors) == 0){
       vect[vect$id==vect.min$id,"toignore"] <- T
@@ -410,10 +434,20 @@ clump_vector_global <- function(){
     
     ignore <- F
     for(i in 1:length(vect.min.neighbors)){
-      # vect.min.neighbors.min <- vect.min.neighbors[
-      #   which.min((abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
-      #   ,]
+
+      # if(length(str_split(vect.min$ori, ",")[[1]]) == 1 && length(str_split(vect.min.neighbors[i,]$ori, ",")[[1]]) == 1){
+      #   if(str_split(vect.min.neighbors[i,]$ori, ",")[[1]] == str_split(vect.min$ori, ",")[[1]]){
+      #     ignore <- T
+      #     next()
+      #   }
+      # }
       
+      if(all(str_split(vect.min.neighbors[i,]$ori, ",")[[1]] %in% str_split(vect.min$ori, ",")[[1]])){
+        ignore <- T
+        next()
+      }
+
+    
       if(vect.min$area < 500 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>2.2){
         if(i>=length(vect.min.neighbors[i,])){
           vect[vect$id==vect.min$id,"toignore"] <- T
@@ -421,57 +455,60 @@ clump_vector_global <- function(){
           break()
         }
         next()
-      }else if(vect.min$area >= 500 && vect.min$area < 3000 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>1.9){
+      }else if(vect.min$area < 500 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>2.2){
         if(i>=length(vect.min.neighbors[i,])){
           vect[vect$id==vect.min$id,"toignore"] <- T
           ignore <- T
-          break()
+          next()
         }
         next()
-      }else if(vect.min$area >= 3000 && vect.min$area < 6000 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>1.5){
+      }else if(vect.min$area < 500 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>2.2){
         if(i>=length(vect.min.neighbors[i,])){
           vect[vect$id==vect.min$id,"toignore"] <- T
           ignore <- T
-          break()
+          next()
         }
         next()
       }else if(vect.min$area >= 6000 && vect.min$area < 9000 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>1.3){
         if(i>=length(vect.min.neighbors[i,])){
           vect[vect$id==vect.min$id,"toignore"] <- T
           ignore <- T
-          break()
+          next()
         }
         next()
       } else if(vect.min$area >= 9000 && vect.min$area < 12000 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>0.9){
         if(i>=length(vect.min.neighbors[i,])){
           vect[vect$id==vect.min$id,"toignore"] <- T
           ignore <- T
-          break()
+          next()
         }
         next()
       } else if(vect.min$area >= 12000 && vect.min$area < 15000 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>0.7){
         if(i>=length(vect.min.neighbors[i,])){
           vect[vect$id==vect.min$id,"toignore"] <- T
           ignore <- T
-          break()
+          next()
         }
         next()
       } else if(vect.min$area >= 15000 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>0.4){
         if(i>=length(vect.min.neighbors[i,])){
           vect[vect$id==vect.min$id,"toignore"] <- T
           ignore <- T
-          break()
+          next()
         }
         next()
-      }else{
+      } else{
         vect.min.neighbors.min <- vect.min.neighbors[i,]
+        ignore <- F
         break()
       }
     }
     
-    if(ignore==T){next()}
-    
-    
+    if(ignore==T){
+      vect[vect$id==vect.min$id,"toignore"] <- T
+      next()
+    }
+
     
     if(nrow(vect.min) > 1){
       print("ALARM! vect.min > 1")
@@ -502,6 +539,8 @@ clump_vector_global <- function(){
     area <- sum(vect.df$area)
     DN <- sum(vect.df$DN*(vect.df$area/area))
     sd <- sum(vect.df$sd*(vect.df$area/area))
+    ori <- paste(unique(vect.df$ori), collapse=",")
+    
     #tpi <- sum(vect.df$tpi*(vect.df$area/area))
     
     vect.df <- vect.df[1,]
@@ -510,6 +549,7 @@ clump_vector_global <- function(){
     vect.df$area <- area
     vect.df$id <- ids[1]
     vect.df$sd <- sd
+    vect.df$ori <- ori
     #vect.df$tpi <- tpi
     
     neighbors <- NULL
