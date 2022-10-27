@@ -59,16 +59,17 @@ clump_vector <- function(id){
   vect$area <- abs(vect$area)
   
   vect$toignore <- FALSE
-  
-  yes <- c()
-  no200 <- c()
-  no500 <- c()
-  no3000 <- c()
-  no6000 <- c()
-  no9000 <- c()
-  no12000 <- c()
-  no15000 <- c()
-  
+  vect$npl <- 1
+  vect$plare <- vect$area
+  # yes <- c()
+  # no200 <- c()
+  # no500 <- c()
+  # no3000 <- c()
+  # no6000 <- c()
+  # no9000 <- c()
+  # no12000 <- c()
+  # no15000 <- c()
+  # 
   
   c <- 1
   time <- Sys.time()
@@ -128,36 +129,36 @@ clump_vector <- function(id){
       ,]
   
     if(first500 ==F && vect.min$area >= 200 && vect.min$area < 500 && abs(vect.min.neighbors.min$DN-vect.min$DN)>2){
-      no200 <- append(no200, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
+      # no200 <- append(no200, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     }else if(vect.min$area >= 500 && vect.min$area < 3000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.7){
-      no500 <- append(no500, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
+      # no500 <- append(no500, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     }else if(vect.min$area >= 3000 && vect.min$area < 6000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.4){
-      no3000 <- append(no3000, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
+      # no3000 <- append(no3000, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     }else if(vect.min$area >= 6000 && vect.min$area < 9000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.1){
-      no6000 <- append(no6000, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
+      # no6000 <- append(no6000, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     } else if(vect.min$area >= 9000 && vect.min$area < 12000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.8){
-      no9000 <- append(no9000, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
+      # no9000 <- append(no9000, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     } else if(vect.min$area >= 12000 && vect.min$area < 15000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.5){
-      no12000 <- append(no12000, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
+      # no12000 <- append(no12000, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     } else if(vect.min$area >= 15000 && abs(vect.min.neighbors.min$DN-vect.min$DN)>0.2){
-      no15000 <- append(no15000, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
+      # no15000 <- append(no15000, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     }
     
-    yes <- append(yes, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
+    #yes <- append(yes, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
     
     if(nrow(vect.min) > 1){
       print("ALARM! vect.min > 1")
@@ -188,6 +189,8 @@ clump_vector <- function(id){
     area <- sum(vect.df$area)
     DN <- sum(vect.df$DN*(vect.df$area/area))
     sd <- sum(vect.df$sd*(vect.df$area/area))
+    npl <-  sum(vect.df$npl)
+    plare <- paste(str_split(vect.df[1,]$plmare, ",")[[1]], str_split(vect.df[2,]$plmare, ",")[[1]], sep=",")
     #tpi <- sum(vect.df$tpi*(vect.df$area/area))
     
     vect.df <- vect.df[1,]
@@ -196,6 +199,9 @@ clump_vector <- function(id){
     vect.df$area <- area
     vect.df$id <- ids[1]
     vect.df$sd <- sd
+    vect.df$npl <- npl
+    vect.df$plare <- plare
+    
     #vect.df$tpi <- tpi
     
     neighbors <- NULL
@@ -255,7 +261,7 @@ clump_vector <- function(id){
   
   vect <- cut_clumped_by_extent(vect, id, 2)
   
-  vect.towrite <- vect[,c("DN","sd")]
+  vect.towrite <- vect[,c("npl", "plare")]
   writeOGR(vect.towrite, dir, paste(id, "_clmp", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)  
   rm(vect.towrite)
   
