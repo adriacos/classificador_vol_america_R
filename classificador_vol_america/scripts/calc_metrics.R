@@ -11,6 +11,7 @@ library(rgdal)
 library(remotes)
 library(SpaDES)
 library(geosphere)
+library(sf)
 
 calc_metrics <- function(name, elev, pend, clima.mean_temp, clima.amp_term, clima.mean_prec, clima.reg_pluv){
   print("calc_metrics")
@@ -106,6 +107,17 @@ calc_neighbor_metrics_ <- function(id, vect){
   n_mn_mn <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$mn, na.rm=T)
   n_sd_mn <- sd(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$mn, na.rm=T)
  
+  n_pnt_m <-  length(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],][
+    abs(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$mn - vect$mn)<= 0.5])/
+    length(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],])
+  
+  n_pnt_t <-  length(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],][
+    abs(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$tpi - vect$tpi)<= 0.5])/
+    length(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],])
+  
+  n_nt_mn <- min(abs(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$mn - vect$mn))
+  n_nt_tp <- min(abs(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$tpi - vect$tpi))
+  
   n_mn_mdn <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$mdn, na.rm=T)
   
   n_mn_std <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$std, na.rm=T)
@@ -205,8 +217,9 @@ calc_squaredness <- function(vect){
   }
   #v$sqr_a <- v$vtx/v$area
   
-  sqr_p <- 1/(v$vtx/sqrt(v$peri))
+  #sqr_p <- 1/(v$vtx/sqrt(v$peri))
   sqr_p <- 1/(v$vtx/log(v$peri))
+  #sqr_p <- 1/(v$vtx/v$peri)
 }
 
 calc_longness <- function(vect){

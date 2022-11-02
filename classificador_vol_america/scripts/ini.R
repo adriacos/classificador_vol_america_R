@@ -135,7 +135,7 @@ save_ortofotos_to_rasters <- function(n=NULL){
   if(!is.null(n)){
     ids <- ids[1:n]
   }else{
-    ids <- ids[1:15]
+    ids <- ids[1:25]
   }
   ids <- sort(ids)
   

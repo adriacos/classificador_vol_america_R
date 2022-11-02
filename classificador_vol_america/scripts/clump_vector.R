@@ -190,7 +190,7 @@ clump_vector <- function(id){
     DN <- sum(vect.df$DN*(vect.df$area/area))
     sd <- sum(vect.df$sd*(vect.df$area/area))
     npl <-  sum(vect.df$npl)
-    plare <- paste(str_split(vect.df[1,]$plmare, ",")[[1]], str_split(vect.df[2,]$plmare, ",")[[1]], sep=",")
+    plare <- paste(str_split(vect.df[1,]$plare, ",")[[1]], str_split(vect.df[2,]$plare, ",")[[1]], collapse=",")
     #tpi <- sum(vect.df$tpi*(vect.df$area/area))
     
     vect.df <- vect.df[1,]
@@ -239,14 +239,14 @@ clump_vector <- function(id){
     }
   }
   
-  print(paste("YEs:", mean(yes, na.rm=T)))
-  print(paste("NO200:", min(no200, na.rm=T)))
-  print(paste("NO500:", min(no500, na.rm=T)))
-  print(paste("NO3000:", min(no3000, na.rm=T)))
-  print(paste("NO6000:", min(no6000, na.rm=T)))
-  print(paste("NO9000:", min(no9000, na.rm=T)))
-  print(paste("NO12000:", min(no12000, na.rm=T)))
-  print(paste("NO15000:", min(no15000, na.rm=T)))
+  # print(paste("YEs:", mean(yes, na.rm=T)))
+  # print(paste("NO200:", min(no200, na.rm=T)))
+  # print(paste("NO500:", min(no500, na.rm=T)))
+  # print(paste("NO3000:", min(no3000, na.rm=T)))
+  # print(paste("NO6000:", min(no6000, na.rm=T)))
+  # print(paste("NO9000:", min(no9000, na.rm=T)))
+  # print(paste("NO12000:", min(no12000, na.rm=T)))
+  # print(paste("NO15000:", min(no15000, na.rm=T)))
   
   
   rast <- raster(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
