@@ -15,7 +15,7 @@ create_export_ortofoto_raster <- function(id, lat, lng){
   rm(map)
   
   #check if there are holes
-  if(max(table(values(rast))/length(rast)) > 0.08){
+  if(max(table(values(rast))/length(rast)) > 0.07){
     print(paste("Map with id ", id, " was corrupted at extraction", sep=""))
     save_id_corrupted(id)
     return(NULL)

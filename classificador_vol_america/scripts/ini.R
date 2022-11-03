@@ -168,6 +168,8 @@ save_ortofotos_to_rasters <- function(n=NULL){
 
 try_export_corrupted <- function(){
   ids <- get_corrupted_ids() 
+  ids <- unique(ids)
+  ids <- sort(ids)
   vects <- get_quad_vect(ids)
   vects <- reproject_EPSG_4258_vect(vects)
   
