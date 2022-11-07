@@ -1,4 +1,6 @@
 
+source("./classificador_vol_america/scripts/project.R")
+
 
 # library(sf)
 # library(tidyverse)
@@ -10,6 +12,7 @@ merge_rasters <- function(rasters){
   aligned <- mapply(function(x, y) projectRaster(from=x, to=y), rasts, templates)
   merged <- r1
   for(i in 1:length(rasts)){
+    print(i)
     merged <- merge(merged, aligned[[i]])
   }
   merged
@@ -87,20 +90,84 @@ merge_vectors <- function(vector_list){
   #per a cada vect, restar-li tots els vects dels vectors_list adjacents
   #ajuntar tots els vector_list
   
+  vector_list <- lapply(vector_list, reproject_EPSG_25831_vect)
   
   for(i in 1:length(vector_list)){
+     vector_list[[i]]$ori <- names(vector_list)[i]
+     vector_list[[i]]$n_quad <- vector_list[[i]]$ori
+  }
+  
+  
+  for(i in 1:length(vector_list)){
+    print(i)
     v1 <- vector_list[[i]]
     for(ii in 1:length(vector_list)){
       if(i==ii){next()}
       v2 <- vector_list[[ii]]
-      vector_list[[i]] <- v1-v2
-      v1 <- vector_list[[i]]
+      if((extent(v1)@ymin < extent(v2)@ymax && extent(v1)@ymax > extent(v2)@ymax && 
+          (round(extent(v1)@xmin,2) == round(extent(v2)@xmin,2) || 
+           round(extent(v1)@xmax,2) == round(extent(v2)@xmin, 2) || 
+           round(extent(v1)@xmin,2) == round(extent(v2)@xmax, 2))) ||
+         (extent(v1)@xmin < extent(v2)@xmax && extent(v1)@xmax > extent(v2)@xmax && 
+          (round(extent(v1)@ymin,2) == round(extent(v2)@ymin,2) || 
+           round(extent(v1)@ymax,2) == round(extent(v2)@ymin, 2) || 
+           round(extent(v1)@ymin,2) == round(extent(v2)@ymax, 2))) ||
+         (extent(v1)@xmax > extent(v2)@xmin && extent(v1)@xmin < extent(v2)@xmin &&
+          extent(v1)@ymin < extent(v2)@ymax && extent(v1)@ymax > extent(v2)@ymin) 
+         ||
+         (extent(v1)@xmax > extent(v2)@xmin && extent(v1)@xmin < extent(v2)@xmin &&
+          extent(v1)@ymax > extent(v2)@ymin && extent(v1)@ymin < extent(v2)@ymin)
+         ||
+         (extent(v1)@xmin < extent(v2)@xmax && extent(v1)@xmax > extent(v2)@xmax &&
+          extent(v1)@ymax > extent(v2)@ymin && extent(v1)@ymin < extent(v2)@ymin)
+         ||
+         (extent(v1)@xmin < extent(v2)@xmax && extent(v1)@xmax > extent(v2)@xmax &&
+          extent(v1)@ymin < extent(v2)@ymax && extent(v1)@ymax > extent(v2)@ymin)
+         ){
+      #if(gIntersects(v1, v2, byid = F)==T){
+        vector_list[[i]] <- v1-v2
+        vector_list[[i]]$n_quad <- paste(vector_list[[i]]$n_quad[1], v2$ori[1], sep=",")
+        vector_list[[ii]]$n_quad <- paste(vector_list[[ii]]$n_quad[1], v1$ori[1], sep=",")
+        v1 <- vector_list[[i]]  
+      }
     }
   }
+  
+  rm(v1)
+  rm(v2)
+  rm(i)
+  rm(ii)
+  gc()
+  
+  for(i in 1:length(vector_list)){
+    if(!"DN" %in% names(vector_list[[i]])){
+      vector_list[[i]]$DN <- NA
+    }
+    if(!"sd" %in% names(vector_list[[i]])){
+      vector_list[[i]]$sd <- NA
+    }
+    if(!"npl" %in% names(vector_list[[i]])){
+      vector_list[[i]]$npl <- NA
+    }
+    if(!"plare" %in% names(vector_list[[i]])){
+      vector_list[[i]]$plare <- NA
+    }
+  }
+  
+  
   vects <- do.call(rbind, vector_list)
+  rm(vector_list)
+  gc()
+  
+  sf <- st_as_sf(vects)
+  sf <- st_cast(sf, "POLYGON")
+  vects <- as(sf, "Spatial")
+  
   writeOGR(vects, "./classificador_vol_america/vect/global", "global", driver = "ESRI Shapefile", overwrite_layer = TRUE)
+  vects <- reproject_EPSG_4258_vect(vects)
   vects
 }
+
 
 
 # merge_clumped <- function(){

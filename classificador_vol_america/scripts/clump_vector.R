@@ -309,9 +309,11 @@ clump_vector_global <- function(){
   print("clump_vector")
   # dir <- "./classificador_vol_america/vect/clumped/"
   
+  #do both in parallel
   vect <- merge_clumped()
   ids <- get_clumped_ids()
   rast <- merge_rasters(read_ortofotos(ids))
+  
   
   #treure àrea
   v <- vect(vect)
@@ -340,36 +342,76 @@ clump_vector_global <- function(){
   
   #gTouches was not returning all touching vectors, I don't know why
   time <- Sys.time()
-  vect$neighbors <- ""
-  vect$border <- F
-  for(i in 1:nrow(vect)){
-    for(ii in 1:nrow(vect)){
-      if (i==ii){
+  
+  iii <- 1:length(vect)
+  find_neighbors<- function(i, vect){
+    print(i)
+    v <- vect[i,]
+    vect.n_quad <- vect[vect$ori %in% str_split(v$n_quad, ",")[[1]],]
+    for(ii in 1:nrow(vect.n_quad)){
+      if (v$id==vect.n_quad[ii,]$id){
         next()
       }
-      if(gIntersects(vect[i,], vect[ii,], byid = F)==T){
-        if(vect[i,]$neighbors == ""){
-          vect[i,"neighbors"] <- vect[ii,]$id
+      if(gIntersects(v, vect.n_quad[ii,], byid = F)==T){
+        print("a")
+        if(v$neighbors == ""){
+          v$neighbors <- vect.n_quad[ii,]$id
         }else{
-          vect[i,"neighbors"] <- paste(vect[i,]$neighbors, vect[ii,]$id, sep=",")
+          v$neighbors <- paste(v$neighbors, vect.n_quad[ii,]$id, sep=",")
         }
-        if(vect[i,]$ori != vect[ii,]$ori){
-          vect[i,"border"] <- T
-          vect[ii,"border"] <- T
+        if(v$ori != vect.n_quad[ii,]$ori){
+          v$border <- T
+          #vect[ii,"border"] <- T
         }
       }
     }
+    return(v)
   }
+  
+  # cluster <- makeCluster(detectCores(), outfile="log_clump.txt")
+  # clusterExport(cluster, list("iii", "find_neighbors", "vect"))
+  # clusterEvalQ(cluster, list(library(sp), library(rgeos), library(stringr)))
+  # neighbors <- parSapply(cluster, iii, find_neighbors, vect)
+  # stopCluster(cluster)
+  # 
+  neighbors <- sapply(iii, find_neighbors, vect)
+  
+  
+  # vect$neighbors <- ""
+  # vect$border <- F
+  # for(i in 1:nrow(vect)){
+  #   print(i)
+  #   vect.n_quad <- vect[vect$ori %in% str_split(vect[i,]$n_quad, ",")[[1]],]
+  #   for(ii in 1:nrow(vect.n_quad)){
+  #     if (vect[i,]$id==vect.n_quad[ii,]$id){
+  #       next()
+  #     }
+  #     if(gIntersects(vect[i,], vect.n_quad[ii,], byid = F)==T){
+  #       print("a")
+  #       if(vect[i,]$neighbors == ""){
+  #         vect[i,"neighbors"] <- vect.n_quad[ii,]$id
+  #       }else{
+  #         vect[i,"neighbors"] <- paste(vect[i,]$neighbors, vect.n_quad[ii,]$id, sep=",")
+  #       }
+  #       if(vect[i,]$ori != vect.n_quad[ii,]$ori){
+  #         vect[i,"border"] <- T
+  #         #vect[ii,"border"] <- T
+  #       }
+  #     }
+  #   }
+  # }
   print(as.numeric(difftime(Sys.time(),time,units="secs")))
   
-  # time <- Sys.time()
-  # neighbours <- gTouches(vect, returnDense=FALSE, byid=TRUE, )
-  # neighbours <- sapply(neighbours,paste,collapse=",")
-  # print(as.numeric(difftime(Sys.time(),time,units="secs")))
-  # 
-  # vect$neighbors <- neighbours
-  # rm(neighbours)
-  # gc()
+  test <- do.call(rbind, neighbors)
+  
+   # time <- Sys.time()
+   # neighbours <- gTouches(vect, returnDense=FALSE, byid=TRUE, )
+   # neighbours <- sapply(neighbours,paste,collapse=",")
+   # print(as.numeric(difftime(Sys.time(),time,units="secs")))
+   # 
+   # vect$neighbors <- neighbours
+   # rm(neighbours)
+   # gc()
   
   vect$DN <- as.numeric(vect$DN)
   vect$area <- abs(vect$area)

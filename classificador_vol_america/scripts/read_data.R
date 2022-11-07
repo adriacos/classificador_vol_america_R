@@ -55,8 +55,8 @@ read_quad_ids_exported <- function(){
 
 
 
-read_1956_diba_rast <- function(id){
-  raster(paste("./classificador_vol_america/rasters/diba/", id, ".tif", sep=""))
+read_1956_diba_rast <- function(){
+  raster("C:/Users/acosd/Desktop/CREAF/Mapes/Cobertes/1956/diba/CSA56.tif")
 }
 
 # read_plots <- function(){

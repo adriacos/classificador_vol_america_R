@@ -53,7 +53,9 @@ reproject_EPSG_4258_vect <- function(vect){
 
 reproject_EPSG_4258_rast <- function(rast){
   crs <- CRS(SRS_string = "EPSG:4258")
-  reproject_rast(vect, crs)
+  rast <- reproject_rast(rast, crs)
+  projection(rast) <- crs
+  rast
 }
 
 
@@ -64,7 +66,9 @@ reproject_EPSG_4326_vect <- function(vect){
 
 reproject_EPSG_4326_rast <- function(rast){
   crs <- CRS(SRS_string = "EPSG:4326")
-  reproject_rast(vect, crs)
+  rast <- reproject_rast(rast, crs)
+  projection(rast) <- crs
+  rast
 }
 
 reproject_EPSG_25831_vect <- function(vect){
@@ -76,7 +80,9 @@ reproject_EPSG_25831_vect <- function(vect){
 reproject_EPSG_25831_rast <- function(rast){
   crs <- CRS(SRS_string = "EPSG:25831")
   #crs <- CRS("+proj=utm +zone=31 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=crs")
-  reproject_rast(rast, crs)
+  rast <- reproject_rast(rast, crs)
+  projection(rast) <- crs
+  rast
 }
 
 
