@@ -157,11 +157,14 @@ merge_vectors <- function(vector_list){
   
   vects <- do.call(rbind, vector_list)
   rm(vector_list)
-  gc()
+  
   
   sf <- st_as_sf(vects)
   sf <- st_cast(sf, "POLYGON")
   vects <- as(sf, "Spatial")
+  rm(sf)
+  
+  gc()
   
   writeOGR(vects, "./classificador_vol_america/vect/global", "global", driver = "ESRI Shapefile", overwrite_layer = TRUE)
   vects <- reproject_EPSG_4258_vect(vects)

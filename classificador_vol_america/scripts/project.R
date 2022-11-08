@@ -128,3 +128,17 @@ get_coordinates <- function(points){
 get_centroids <- function(vect){
   gCentroid(vect)
 }
+
+
+convert_coordinates <- function(lats, longs, src.proj, dst.proj) {
+  require(sp)
+  as.data.frame(
+    spTransform(
+      SpatialPointsDataFrame(
+        coords = data.frame(Xsrc = longs,
+                            Ysrc = lats),
+        data = data.frame(Xdst = longs,
+                          Ydst = lats),
+        proj4string = src.proj), dst.proj))
+}
+
