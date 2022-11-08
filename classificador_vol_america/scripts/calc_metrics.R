@@ -75,7 +75,10 @@ calc_metrics <- function(name, elev, pend, clima.mean_temp, clima.amp_term, clim
   sp_vect <- vect(vect)
   vect$are <- expanse(sp_vect)
   vect$per <- perim(sp_vect)
+  
+  #mirar quin ens agrada més
   vect$shp <- (2*pi*sqrt(vect$are))/vect$per
+  #vect$shp <- vect$per/sqrt(4*pi*vect$are)
   rm(sp_vect)
   
   #vect$rug <- calc_ruggedness(rast, vect, vect$are)

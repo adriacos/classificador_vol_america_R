@@ -344,6 +344,7 @@ clump_vector_global <- function(){
   time <- Sys.time()
   
   iii <- 1:length(vect)
+  vect$neighbors <- ""
   find_neighbors<- function(i, vect){
     print(i)
     v <- vect[i,]
