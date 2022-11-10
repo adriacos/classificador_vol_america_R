@@ -103,13 +103,18 @@ merge_vectors_1 <- function(){
   
   vects <- do.call(rbind, vector_list)
   rm(vector_list)
+  
+  sf <- st_as_sf(vects)
+  sf <- st_cast(sf, "POLYGON")
+  vects <- as(sf, "Spatial")
+  rm(sf)
 
   writeOGR(vects, "./classificador_vol_america/vect/global", "global_", driver = "ESRI Shapefile", overwrite_layer = TRUE)
   stop("Vectors have been saved in classificador_vol_america/vect/global/global_.shp. This file must be corrected and saved again as global_corrected")
 }
 
 merge_vectors_2 <- function(){
-  vects <- readOGR("./classificador_vol_america/vects/global/global_corrected.shp")
+  vects <- readOGR("./classificador_vol_america/vect/global/global_corrected.shp")
   
   iii <- 1:length(vects)
   vects$neighbors <- ""
@@ -147,7 +152,7 @@ merge_vectors_2 <- function(){
           }
         }
         #potser amb buffer?
-      }else if(gTouches(v, vects.n_quad[ii,], byid = F, checkValidity=TRUE)==T){
+      }else if(gTouches(v, vects.n_quad[ii,], byid = F)==T){
         print("b")
         if(v$neighbors == ""){
           v$neighbors <- vects.n_quad[ii,]$id
@@ -170,13 +175,13 @@ merge_vectors_2 <- function(){
   # stopCluster(cluster)
   # 
   
-  vects <- sapply(iii, find_neighbors, vects)
+  t <- sapply(iii, find_neighbors, vects)
   vects <- do.call(rbid, sapply(iii, find_neighbors, vects))
   
-  sf <- st_as_sf(vects)
-  sf <- st_cast(sf, "POLYGON")
-  vects <- as(sf, "Spatial")
-  rm(sf)
+  # sf <- st_as_sf(vects)
+  # sf <- st_cast(sf, "POLYGON")
+  # vects <- as(sf, "Spatial")
+  # rm(sf)
   
   gc()
   
