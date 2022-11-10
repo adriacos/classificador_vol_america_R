@@ -340,79 +340,78 @@ clump_vector_global <- function(){
   gc()
   
   
-  #gTouches was not returning all touching vectors, I don't know why
-  time <- Sys.time()
-  
-  iii <- 1:length(vect)
-  vect$neighbors <- ""
-  find_neighbors<- function(i, vect){
-    print(i)
-    v <- vect[i,]
-    vect.n_quad <- vect[vect$ori %in% str_split(v$n_quad, ",")[[1]],]
-    for(ii in 1:nrow(vect.n_quad)){
-      if (v$id==vect.n_quad[ii,]$id){
-        next()
-      }
-      if(gIntersects(v, vect.n_quad[ii,], byid = F)==T){
-        print("a")
-        if(v$neighbors == ""){
-          v$neighbors <- vect.n_quad[ii,]$id
-        }else{
-          v$neighbors <- paste(v$neighbors, vect.n_quad[ii,]$id, sep=",")
-        }
-        if(v$ori != vect.n_quad[ii,]$ori){
-          v$border <- T
-          #vect[ii,"border"] <- T
-        }
-      }
-    }
-    return(v)
-  }
-  
-  # cluster <- makeCluster(detectCores(), outfile="log_clump.txt")
-  # clusterExport(cluster, list("iii", "find_neighbors", "vect"))
-  # clusterEvalQ(cluster, list(library(sp), library(rgeos), library(stringr)))
-  # neighbors <- parSapply(cluster, iii, find_neighbors, vect)
-  # stopCluster(cluster)
+  # #gTouches was not returning all touching vectors, I don't know why
+  # time <- Sys.time()
   # 
-  neighbors <- sapply(iii, find_neighbors, vect)
-  
-  
+  # iii <- 1:length(vect)
   # vect$neighbors <- ""
   # vect$border <- F
-  # for(i in 1:nrow(vect)){
+  # find_neighbors<- function(i, vect){
   #   print(i)
-  #   vect.n_quad <- vect[vect$ori %in% str_split(vect[i,]$n_quad, ",")[[1]],]
+  #   v <- vect[i,]
+  #   vect.n_quad <- vect[vect$ori %in% str_split(v$n_quad, ",")[[1]],]
   #   for(ii in 1:nrow(vect.n_quad)){
-  #     if (vect[i,]$id==vect.n_quad[ii,]$id){
+  #     if (v$id==vect.n_quad[ii,]$id){
   #       next()
   #     }
-  #     if(gIntersects(vect[i,], vect.n_quad[ii,], byid = F)==T){
+  #     if(gIntersects(v, vect.n_quad[ii,], byid = F)==T){
   #       print("a")
-  #       if(vect[i,]$neighbors == ""){
-  #         vect[i,"neighbors"] <- vect.n_quad[ii,]$id
+  #       if(v$neighbors == ""){
+  #         v$neighbors <- vect.n_quad[ii,]$id
   #       }else{
-  #         vect[i,"neighbors"] <- paste(vect[i,]$neighbors, vect.n_quad[ii,]$id, sep=",")
+  #         v$neighbors <- paste(v$neighbors, vect.n_quad[ii,]$id, sep=",")
   #       }
-  #       if(vect[i,]$ori != vect.n_quad[ii,]$ori){
-  #         vect[i,"border"] <- T
+  #       if(v$ori != vect.n_quad[ii,]$ori){
+  #         v$border <- T
   #         #vect[ii,"border"] <- T
   #       }
   #     }
   #   }
+  #   return(v)
   # }
-  print(as.numeric(difftime(Sys.time(),time,units="secs")))
+  # 
+  # # cluster <- makeCluster(detectCores(), outfile="log_clump.txt")
+  # # clusterExport(cluster, list("iii", "find_neighbors", "vect"))
+  # # clusterEvalQ(cluster, list(library(sp), library(rgeos), library(stringr)))
+  # # neighbors <- parSapply(cluster, iii, find_neighbors, vect)
+  # # stopCluster(cluster)
+  # # 
+  # vect <- do.call(rbid, sapply(iii, find_neighbors, vect))
+  # 
+  # 
+  # # vect$neighbors <- ""
+  # # vect$border <- F
+  # # for(i in 1:nrow(vect)){
+  # #   print(i)
+  # #   vect.n_quad <- vect[vect$ori %in% str_split(vect[i,]$n_quad, ",")[[1]],]
+  # #   for(ii in 1:nrow(vect.n_quad)){
+  # #     if (vect[i,]$id==vect.n_quad[ii,]$id){
+  # #       next()
+  # #     }
+  # #     if(gIntersects(vect[i,], vect.n_quad[ii,], byid = F)==T){
+  # #       print("a")
+  # #       if(vect[i,]$neighbors == ""){
+  # #         vect[i,"neighbors"] <- vect.n_quad[ii,]$id
+  # #       }else{
+  # #         vect[i,"neighbors"] <- paste(vect[i,]$neighbors, vect.n_quad[ii,]$id, sep=",")
+  # #       }
+  # #       if(vect[i,]$ori != vect.n_quad[ii,]$ori){
+  # #         vect[i,"border"] <- T
+  # #         #vect[ii,"border"] <- T
+  # #       }
+  # #     }
+  # #   }
+  # # }
+  # print(as.numeric(difftime(Sys.time(),time,units="secs")))
   
-  test <- do.call(rbind, neighbors)
-  
-   # time <- Sys.time()
-   # neighbours <- gTouches(vect, returnDense=FALSE, byid=TRUE, )
-   # neighbours <- sapply(neighbours,paste,collapse=",")
-   # print(as.numeric(difftime(Sys.time(),time,units="secs")))
-   # 
-   # vect$neighbors <- neighbours
-   # rm(neighbours)
-   # gc()
+   time <- Sys.time()
+   neighbours <- gTouches(gBuffer(vect, byid=TRUE, width=0), returnDense=FALSE, byid=TRUE, )
+   neighbours <- sapply(neighbours,paste,collapse=",")
+   print(as.numeric(difftime(Sys.time(),time,units="secs")))
+   
+   vect$neighbors <- neighbours
+   rm(neighbours)
+   gc()
   
   vect$DN <- as.numeric(vect$DN)
   vect$area <- abs(vect$area)
