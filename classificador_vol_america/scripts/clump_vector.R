@@ -412,6 +412,23 @@ clump_vector_global <- function(){
    vect$neighbors <- neighbours
    rm(neighbours)
    gc()
+   
+  vect$border <- F
+  for(i in 1:length(vect)){
+    print(i)
+    nbs <- str_split(vect[i,]$neighbors, ",")[[1]]
+    if(length(nbs)==1&& nbs==""){
+      next
+    }
+    for(ii in 1:length(nbs)){
+      if(vect[i,]$ori != vect[vect$id==nbs[ii],]$ori){
+        print("b")
+        vect[i,"border"] <- T
+        break()
+      }
+    }
+  }
+   
   
   vect$DN <- as.numeric(vect$DN)
   vect$area <- abs(vect$area)

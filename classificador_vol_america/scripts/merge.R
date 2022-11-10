@@ -26,16 +26,20 @@ merge_clumped <- function(){
 }
 
 merge_vectors <- function(vector_list){
-  vector_list <- lapply(vector_list, reproject_EPSG_25831_vect)
+  
   quads <- get_quad_vect(names(vector_list))
-  vector_list <- lapply(names(vector_list), function(id, vector_list, quads){
-    crop(vector_list[[id]], quads[quads$id==id,])
-  }, vector_list, quads)
   
   for(i in 1:length(vector_list)){
     vector_list[[i]]$ori <- names(vector_list)[i]
     vector_list[[i]]$n_quad <- vector_list[[i]]$ori
   }
+  
+  vector_list <- lapply(vector_list, reproject_EPSG_25831_vect)
+  vector_list <- lapply(names(vector_list), function(id, vector_list, quads){
+    crop(vector_list[[id]], quads[quads$id==id,])
+  }, vector_list, quads)
+  
+  
   for(i in 1:length(vector_list)){
     if(!"DN" %in% names(vector_list[[i]])){
       vector_list[[i]]$DN <- NA
@@ -117,11 +121,6 @@ merge_vectors <- function(vector_list){
   # return(vects)
   
   
-  
-  #mirar quins vectors_list són contigus amb quins, apuntar-ho
-  #per a cada vector_list, agafar tots els vect
-  #per a cada vect, restar-li tots els vects dels vectors_list adjacents
-  #ajuntar tots els vector_list
   
   vector_list <- lapply(vector_list, reproject_EPSG_25831_vect)
   
