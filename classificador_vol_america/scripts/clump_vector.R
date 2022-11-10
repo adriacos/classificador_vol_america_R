@@ -698,3 +698,7 @@ clump_vector_global <- function(){
   gc()
 }
 
+find_neighbors <- function(vect){
+  
+}
+
