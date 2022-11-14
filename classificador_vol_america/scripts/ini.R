@@ -20,6 +20,14 @@ ini <- function(){
   #cores <- detectCores()
   cores <- 5
   
+  while(TRUE){
+    smoothen_rasters_all()
+    save_ortofotos_to_rasters()
+    try_export_corrupted()
+    try_export_corrupted()
+  }
+  return(0)
+  
   ids <- read_quad_ids()
   done <- get_done_ids() 
   while(length(done)<length(ids)){
@@ -135,7 +143,7 @@ save_ortofotos_to_rasters <- function(n=NULL){
   if(!is.null(n)){
     ids <- ids[1:n]
   }else{
-    ids <- ids[1:25]
+    ids <- ids[1:50]
   }
   ids <- sort(ids)
   
@@ -197,9 +205,9 @@ smoothen_rasters_all <- function(n=NULL){
   #ids <- get_raster_ids_done_not_smoothen()
   ids <- get_exported_ids()
   smoothen <- get_smoothen_ids()
-  vectorised <- get_vectorised_ids()
+  #vectorised <- get_vectorised_ids()
   ids <- ids[!ids %in% smoothen]
-  ids <- ids[!ids %in% vectorised]
+  #ids <- ids[!ids %in% vectorised]
   if(length(ids)==0){
     return(NULL)
   }

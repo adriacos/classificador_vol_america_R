@@ -180,7 +180,7 @@ get_vectorised_files <- function(){
 
 get_smoothen_ids <- function(){
   print("get_smoothen_ids")
-  files <- list.files("./classificador_vol_america/rasters/smoothen", pattern = "\\_smth.tif$")
+  files <- list.files("./classificador_vol_america/rasters/smoothen/bkp", pattern = "\\_smth.tif$")
   ids <- sub("_smth.tif","",files)
   ids
 }
