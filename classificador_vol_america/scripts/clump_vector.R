@@ -13,13 +13,15 @@ library(terra)
 library(smoothr)
 #library(sf)
 
-clump_vector <- function(id){
+clump_vector <- function(vects, arealimit=NULL){
   
   print("clump_vector")
   dir <- "./classificador_vol_america/vect/clumped/"
   
-  vect <- readOGR(paste("./classificador_vol_america/vect/vectorised/", id, ".shp", sep=""))
-  rast <- raster(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
+  # vect <- readOGR(paste("./classificador_vol_america/vect/vectorised/", id, ".shp", sep=""))
+  # rast <- raster(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
+  vect <- reproject_EPSG_4258_vect(vects)
+  rast <- crop(raster("./classificador_vol_america/rasters/all/global.tif"), vect)
   
   #treure àrea
   v <- vect(vect)
@@ -61,15 +63,6 @@ clump_vector <- function(id){
   vect$toignore <- FALSE
   vect$npl <- 1
   vect$plare <- vect$area
-  # yes <- c()
-  # no200 <- c()
-  # no500 <- c()
-  # no3000 <- c()
-  # no6000 <- c()
-  # no9000 <- c()
-  # no12000 <- c()
-  # no15000 <- c()
-  # 
   
   c <- 1
   time <- Sys.time()
@@ -88,6 +81,11 @@ clump_vector <- function(id){
     if(length(vect.min)==0){
       print("FINISH")
       break()
+    }
+    
+    if(!is.null(arealimit)&&vect.min$area>=arealimit){
+      print("AREA LIMIT REACHED")
+      return(vect)
     }
     
     if(vect.min$area >= 500){
@@ -310,27 +308,26 @@ clump_vector_global <- function(){
   # dir <- "./classificador_vol_america/vect/clumped/"
   
   #do both in parallel
-  vect <- merge_clumped()
+  #ids <- c(12261, 12262, 12341, 12342)
   ids <- get_clumped_ids()
-  rast <- merge_rasters(read_ortofotos(ids))
   
+  library(future)
+  plan(multisession)
+  
+  vect_f <- future({merge_vectors_3(ids)})
+  rast_f <- future({merge_rasters(read_ortofotos(ids))})
+  
+  vect <- value(vect_f)
+  rast <- value(rast_f)
   
   #treure àrea
   v <- vect(vect)
   vect$area <- expanse(v)
   rm(v)
-  
-  
-  vect$id <- 1:length(vect)
-  if(vect[1,]$id==0){
-    vect$id <- vect$id +1
-  }
-  
+
   ex <- exact_extract(rast, vect, "stdev")
   vect$sd <- ex
   vect[is.na(vect$sd),"sd"] <- 0
-
-  #vect$tpi <- calc_TPI(rast, vect)
 
   #treure DN
   ex <- exact_extract(rast, vect, "mean")
@@ -339,101 +336,14 @@ clump_vector_global <- function(){
   rm(rast)
   gc()
   
-  
-  # #gTouches was not returning all touching vectors, I don't know why
-  # time <- Sys.time()
-  # 
-  # iii <- 1:length(vect)
-  # vect$neighbors <- ""
-  # vect$border <- F
-  # find_neighbors<- function(i, vect){
-  #   print(i)
-  #   v <- vect[i,]
-  #   vect.n_quad <- vect[vect$ori %in% str_split(v$n_quad, ",")[[1]],]
-  #   for(ii in 1:nrow(vect.n_quad)){
-  #     if (v$id==vect.n_quad[ii,]$id){
-  #       next()
-  #     }
-  #     if(gIntersects(v, vect.n_quad[ii,], byid = F)==T){
-  #       print("a")
-  #       if(v$neighbors == ""){
-  #         v$neighbors <- vect.n_quad[ii,]$id
-  #       }else{
-  #         v$neighbors <- paste(v$neighbors, vect.n_quad[ii,]$id, sep=",")
-  #       }
-  #       if(v$ori != vect.n_quad[ii,]$ori){
-  #         v$border <- T
-  #         #vect[ii,"border"] <- T
-  #       }
-  #     }
-  #   }
-  #   return(v)
-  # }
-  # 
-  # # cluster <- makeCluster(detectCores(), outfile="log_clump.txt")
-  # # clusterExport(cluster, list("iii", "find_neighbors", "vect"))
-  # # clusterEvalQ(cluster, list(library(sp), library(rgeos), library(stringr)))
-  # # neighbors <- parSapply(cluster, iii, find_neighbors, vect)
-  # # stopCluster(cluster)
-  # # 
-  # vect <- do.call(rbid, sapply(iii, find_neighbors, vect))
-  # 
-  # 
-  # # vect$neighbors <- ""
-  # # vect$border <- F
-  # # for(i in 1:nrow(vect)){
-  # #   print(i)
-  # #   vect.n_quad <- vect[vect$ori %in% str_split(vect[i,]$n_quad, ",")[[1]],]
-  # #   for(ii in 1:nrow(vect.n_quad)){
-  # #     if (vect[i,]$id==vect.n_quad[ii,]$id){
-  # #       next()
-  # #     }
-  # #     if(gIntersects(vect[i,], vect.n_quad[ii,], byid = F)==T){
-  # #       print("a")
-  # #       if(vect[i,]$neighbors == ""){
-  # #         vect[i,"neighbors"] <- vect.n_quad[ii,]$id
-  # #       }else{
-  # #         vect[i,"neighbors"] <- paste(vect[i,]$neighbors, vect.n_quad[ii,]$id, sep=",")
-  # #       }
-  # #       if(vect[i,]$ori != vect.n_quad[ii,]$ori){
-  # #         vect[i,"border"] <- T
-  # #         #vect[ii,"border"] <- T
-  # #       }
-  # #     }
-  # #   }
-  # # }
-  # print(as.numeric(difftime(Sys.time(),time,units="secs")))
-  
-   time <- Sys.time()
-   neighbours <- gTouches(gBuffer(vect, byid=TRUE, width=0), returnDense=FALSE, byid=TRUE, )
-   neighbours <- sapply(neighbours,paste,collapse=",")
-   print(as.numeric(difftime(Sys.time(),time,units="secs")))
-   
-   vect$neighbors <- neighbours
-   rm(neighbours)
-   gc()
-   
-  vect$border <- F
-  for(i in 1:length(vect)){
-    print(i)
-    nbs <- str_split(vect[i,]$neighbors, ",")[[1]]
-    if(length(nbs)==1&& nbs==""){
-      next
-    }
-    for(ii in 1:length(nbs)){
-      if(vect[i,]$ori != vect[vect$id==nbs[ii],]$ori){
-        print("b")
-        vect[i,"border"] <- T
-        break()
-      }
-    }
-  }
-   
-  
   vect$DN <- as.numeric(vect$DN)
   vect$area <- abs(vect$area)
   
   vect$toignore <- FALSE
+  
+  bkp <- vect
+  
+  #vect <- reproject_EPSG_25831_vect(vect)
   
   c <- 1
   time <- Sys.time()
@@ -444,6 +354,8 @@ clump_vector_global <- function(){
   first12000 <- FALSE
   first15000 <- FALSE
   
+  #cnt <- 0
+  
   repeat{
     
     vect.min <- vect[vect$toignore==FALSE,]
@@ -452,8 +364,15 @@ clump_vector_global <- function(){
     
     
     if(length(vect.min)==0){
-      print("FINISH")
-      break()
+      # if(cnt==0){
+      #   print("fin")
+      #   cnt <- 1
+      #   vect$toignore <- FALSE
+      #   next()
+      # }else {
+        print("FINISH")
+        break()
+      #}
     }
 
     if(vect.min$area >= 500){
@@ -487,93 +406,90 @@ clump_vector_global <- function(){
         first15000=T
       }
     }
+    
     vect.min.neighbors <- vect[vect$id %in% str_split(vect.min$neighbors, ",")[[1]],]
     vect.min.neighbors <- vect.min.neighbors[vect.min.neighbors$id!=vect.min$id,]
     vect.min.neighbors <- vect.min.neighbors[vect.min.neighbors$border==T,]
-    
     
     if(length(vect.min.neighbors) == 0){
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     }
     
-    ignore <- F
+    vect.min.neighbors$rm=F
     for(i in 1:length(vect.min.neighbors)){
 
       # if(length(str_split(vect.min$ori, ",")[[1]]) == 1 && length(str_split(vect.min.neighbors[i,]$ori, ",")[[1]]) == 1){
       #   if(str_split(vect.min.neighbors[i,]$ori, ",")[[1]] == str_split(vect.min$ori, ",")[[1]]){
-      #     ignore <- T
+      #     vect.min.neighbors[i,"rm"]<-T
+      #     #print("uuuu")
       #     next()
       #   }
       # }
       
-      if(all(str_split(vect.min.neighbors[i,]$ori, ",")[[1]] %in% str_split(vect.min$ori, ",")[[1]])){
-        ignore <- T
-        next()
-      }
-
-    
-      if(vect.min$area < 500 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>2.2){
+      # #if(cnt==0){
+      #   #if(vect.min.neighbors[i,]$ori==vect.min$ori){
+      #   if(all(str_split(vect.min.neighbors[i,]$ori, ",")[[1]] %in% str_split(vect.min$ori, ",")[[1]])){
+      #     vect.min.neighbors[i,"rm"]<-T
+      #     next()
+      #   }
+      # #}
+      
+      if(vect.min$area < 500 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>2.3){
         if(i>=length(vect.min.neighbors[i,])){
-          vect[vect$id==vect.min$id,"toignore"] <- T
-          ignore <- T
-          break()
-        }
-        next()
-      }else if(vect.min$area < 500 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>2.2){
-        if(i>=length(vect.min.neighbors[i,])){
-          vect[vect$id==vect.min$id,"toignore"] <- T
-          ignore <- T
+          vect.min.neighbors[i,"rm"]<-T
           next()
         }
         next()
-      }else if(vect.min$area < 500 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>2.2){
+      }else if(vect.min$area >= 500 && vect.min$area < 3000 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>2.0){
         if(i>=length(vect.min.neighbors[i,])){
-          vect[vect$id==vect.min$id,"toignore"] <- T
-          ignore <- T
+          vect.min.neighbors[i,"rm"]<-T
           next()
         }
         next()
-      }else if(vect.min$area >= 6000 && vect.min$area < 9000 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>1.3){
+      }else if(vect.min$area >= 3000 && vect.min$area < 6000 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>1.7){
         if(i>=length(vect.min.neighbors[i,])){
-          vect[vect$id==vect.min$id,"toignore"] <- T
-          ignore <- T
+          vect.min.neighbors[i,"rm"]<-T
           next()
         }
         next()
-      } else if(vect.min$area >= 9000 && vect.min$area < 12000 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>0.9){
+      }else if(vect.min$area >= 6000 && vect.min$area < 9000 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>1.4){
         if(i>=length(vect.min.neighbors[i,])){
-          vect[vect$id==vect.min$id,"toignore"] <- T
-          ignore <- T
+          vect.min.neighbors[i,"rm"]<-T
           next()
         }
         next()
-      } else if(vect.min$area >= 12000 && vect.min$area < 15000 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>0.7){
+      } else if(vect.min$area >= 9000 && vect.min$area < 12000 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>1.1){
         if(i>=length(vect.min.neighbors[i,])){
-          vect[vect$id==vect.min$id,"toignore"] <- T
-          ignore <- T
+          vect.min.neighbors[i,"rm"]<-T
           next()
         }
         next()
-      } else if(vect.min$area >= 15000 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>0.4){
+      } else if(vect.min$area >= 12000 && vect.min$area < 15000 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>0.8){
         if(i>=length(vect.min.neighbors[i,])){
-          vect[vect$id==vect.min$id,"toignore"] <- T
-          ignore <- T
+          vect.min.neighbors[i,"rm"]<-T
+          next()
+        }
+        next()
+      } else if(vect.min$area >= 15000 && abs(vect.min.neighbors[i,]$DN-vect.min$DN)>0.5){
+        if(i>=length(vect.min.neighbors[i,])){
+          vect.min.neighbors[i,"rm"]<-T
           next()
         }
         next()
       } else{
-        vect.min.neighbors.min <- vect.min.neighbors[i,]
-        ignore <- F
-        break()
+        vect.min.neighbors[i,"rm"]<-F
+        next()
       }
     }
     
-    if(ignore==T){
+    vect.min.neighbors <- vect.min.neighbors[vect.min.neighbors$rm==F,]
+    vect.min.neighbors.min <- vect.min.neighbors[which.min(vect.min.neighbors$DN-vect.min$DN),]
+    
+    if(nrow(vect.min.neighbors.min)==0){
       vect[vect$id==vect.min$id,"toignore"] <- T
       next()
     }
-
     
     if(nrow(vect.min) > 1){
       print("ALARM! vect.min > 1")
@@ -604,9 +520,9 @@ clump_vector_global <- function(){
     area <- sum(vect.df$area)
     DN <- sum(vect.df$DN*(vect.df$area/area))
     sd <- sum(vect.df$sd*(vect.df$area/area))
-    ori <- paste(unique(vect.df$ori), collapse=",")
     
-    #tpi <- sum(vect.df$tpi*(vect.df$area/area))
+    #ori <- vect.df[which.max(vect.df$area),]$ori
+    ori <- paste(unique(vect.df$ori), collapse=",")
     
     vect.df <- vect.df[1,]
     vect.df$DN <- DN
@@ -615,14 +531,12 @@ clump_vector_global <- function(){
     vect.df$id <- ids[1]
     vect.df$sd <- sd
     vect.df$ori <- ori
-    #vect.df$tpi <- tpi
     
     neighbors <- NULL
     area <- NULL
     DN <- NULL
     sd <- NULL
-    #tpi <- NULL
-    
+
     neighbors <- str_split(vect$neighbors, ",")
     neighbors <- lapply(neighbors, function(nb){nb[nb==ids[2]]<-ids[1]; nb})
     neighbors <- sapply(neighbors, paste, collapse=",")
@@ -652,53 +566,52 @@ clump_vector_global <- function(){
     }
   }
   
-  # rast <- raster(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
-  #vect$tpi <- calc_TPI_by_polygons(vect, rast) 
-  
-  # ex <- exact_extract(rast, vect, "stdev")
-  # vect$sd <- ex
-  # vect[is.na(vect$sd),"sd"] <- 0
-  
-  # rm(rast)
-  # gc()
-  # v <- cut_clumped_by_extent(vect, id)
-  # v.ids <- sapply(v@polygons, function(x) x@ID)
-  # v.ids <- sapply(strsplit(v.ids, " "), function(x) x[1])
-  # v.ids <- data.frame(v.ids)
-  # row.names(v.ids) <- v.ids[,1]
-  # vct <- SpatialPolygonsDataFrame(v, v.ids)
-  
-  # vect <- cut_clumped_by_extent(vect, id)
+  # sf <- st_as_sf(vect)
+  # sf <- st_cast(sf, "POLYGON")
+  # sf <- st_make_valid(sf)
+  # library(nngeo)
+  # sf <- st_remove_holes(sf, max_area = 0)
+  # # sf$id <- 1:length(sf)
+  # # nbrs <- st_touches(sf)
+  # vects <- as(sf, "Spatial")
   
   vect.towrite <- vect
-  #vect.towrite$area <- round(vect.towrite$area,2)
-  # vect.towrite <- vect.towrite[,c()]
-  # vect.towrite$fid <- vect$id
-  #vect.towrite <- vect.towrite[,-3]
-  writeOGR(vect.towrite, "./classificador_vol_america/vect/global", "global_clmp", driver = "ESRI Shapefile", overwrite_layer = TRUE)  
+  writeOGR(vect.towrite, "./classificador_vol_america/vect/global", "global_clmp_no_recl", driver = "ESRI Shapefile", overwrite_layer = TRUE)  
   rm(vect.towrite)
-  
-  
-  
-  rm(vect)
-  rm(vect.df)
-  rm(vect.df.agg)
-  rm(vect.join)
-  rm(vect.min)
-  rm(vect.min.neighbors)
-  rm(vect.min.neighbors.min)
-  
-  # save_id_done(id)
-  # file.remove(paste("./classificador_vol_america/vect/vectorised/", id, ".shp", sep=""))
-  # file.remove(paste("./classificador_vol_america/vect/vectorised/", id, ".dbf", sep=""))
-  # file.remove(paste("./classificador_vol_america/vect/vectorised/", id, ".shx", sep=""))
-  # file.remove(paste("./classificador_vol_america/vect/vectorised/", id, ".prj", sep=""))
-  # file.remove(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
   
   gc()
 }
 
-find_neighbors <- function(vect){
+clump_vector_combine <- function(){
   
+  vects <- reproject_EPSG_25831_vect(readOGR("./classificador_vol_america/vect/vectorised/global.shp"))
+  quads <- reproject_EPSG_25831_vect(get_quad_vect())
+  
+  for(i in unique(quads$ori)){
+    ori <- unique(quads$ori)[i]
+    quads_ori <- quads[quads$ori=ori,]
+    for(ii in nrow(quads_ori)){
+      quad <- quads[1,]
+      vects$i <- gIntersect(vects, quad, byId=T)
+      vects[vects$i=T,]$quad_id <- quad$id
+      vects[vects$i=T,]$quad_ori <- quad$ori
+    }
+    vects_ori <- vects[vects$quad_ori=ori,]
+    vects_ori_list <- split(vects_ori, vects_ori$quad_id)
+    rm(vects_ori)
+    cl <- makeCluster(detectCores()-1)
+    clusterExport(cl, list("vects_ori_list", "clump_vector"))
+    clusterEvalQ(cl, list(library(rgdal), library(rgeos), library(stringr), library(maptools)))
+    vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, 200)
+    # vects_ori_list <- lapply(vects_ori_list, clump_vector, 200)
+    stopCluster(cl)
+    
+    vects_ori <- do.call(rbind, vects_ori_list)
+    vects_rest <- vects[vects$quad_ori!=ori,]
+    vects <- rbind(vects_rest, vects_ori)
+    writeOGR(vect.towrite, "./classificador_vol_america/vect/clumped", paste("global_clmp_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
+  }
+  vects <- clump_vector(vects)
+  writeOGR(vect.towrite, "./classificador_vol_america/vect/clumped", "global_clmp", driver = "ESRI Shapefile", overwrite_layer = TRUE)
 }
 

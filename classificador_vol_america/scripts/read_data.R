@@ -43,7 +43,33 @@ get_quad_vect <- function(ids=NULL){
     vect
     #return(reproject_EPSG_25831_vect(vect))
   }
-  
+}
+
+get_quad_vect_dis <- function(ids=NULL){
+  if(is.null(ids)){
+    if(dir.exists("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula")){
+      #return(reproject_EPSG_25831_vect(readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/1kmx1km_BCN.gpkg")))
+      return(readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/1kmx1km_BCN_dis.gpkg"))
+    } else if(dir.exists("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula")){
+      #return(reproject_EPSG_25831_vect(readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/1kmx1km_BCN.gpkg")))
+      return(readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/1kmx1km_BCN_dis.gpkg"))
+    }else {
+      print("ALARM - no quadricula directory found")
+      stop()
+    }
+  }else{
+    if(dir.exists("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula")){
+      vect <- readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/1kmx1km_BCN_dis.gpkg")
+    } else if(dir.exists("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula")){
+      vect <- readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/1kmx1km_BCN_dis.gpkg")
+    }else {
+      print("ALARM - no quadricula directory found")
+      stop()
+    }
+    vect <- vect[vect$id %in% ids,]
+    vect
+    #return(reproject_EPSG_25831_vect(vect))
+  }
 }
 
 read_quad_ids_exported <- function(){
@@ -159,9 +185,13 @@ get_vectorised_ids <- function(){
   ids
 }
 
-get_clumped_vectors <- function(){
+get_clumped_vectors <- function(ids=NULL){
   print("get_clumped_vectors")
-  ids <- get_clumped_ids()
+  if(is.null(ids)){
+    ids <- get_clumped_ids()
+  }else{
+    ids <- as.character(ids)
+  }
   loc <- sapply(ids, function(id) paste("./classificador_vol_america/vect/clumped/", id, "_clmp.shp", sep=""))
   lapply(loc, readOGR)
 }

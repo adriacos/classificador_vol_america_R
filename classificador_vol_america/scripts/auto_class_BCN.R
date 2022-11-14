@@ -31,11 +31,16 @@ getclass__ <- function(vect, rast) {
   r <- crop(rast, vect)
   r <- mask(r, vect)
   #uniqv <- unique(r)
-  c <- as.numeric(names(which.max(table(values(r)))))
-  if(length(c)==0){
-    return(NA)
+  tab <- table(values(r))
+  if(which.max(tab)/sum(tab)>=0.66){
+    c <- as.numeric(names(which.max(tab)))
+    if(length(c)==0){
+      return(NA)
+    }else{
+      return(c)
+    }
   }else{
-    return(c)
+    return NA
   }
 }
 
