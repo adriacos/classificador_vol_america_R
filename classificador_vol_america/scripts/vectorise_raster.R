@@ -39,3 +39,16 @@ save_vectorised_raster <- function(vect, name){
 vectorise_raster_ <- function(rast){
   
 }
+
+vectorise_global <- function(){
+  rast <- raster("./classificador_vol_america/rasters/smoothen/bkp/global.tif")
+  prov <- reproject_EPSG_4258_vect(readOGR("C:\Users/acosd/Desktop/CREAF/Mapes/Limits/Catalunya/LIMADM_PROVINCIA/LIMADM_PROVINCIA_BCN.shp"))
+  #vects <- reproject_EPSG_4258_vect(readOGR("./classificador_vol_america/vect/global/global.shp"))
+  rast <- crop(rast, prov)
+  rast <- mask(rast, prov)
+  rm(vect)
+  vect <- vectorise_raster(rast)
+  writeOGR(vect, "./classificador_vol_america/vect/vectorised", "global", driver = "ESRI Shapefile", overwrite_layer = TRUE) 
+  rm(vect)
+  gc()
+}
