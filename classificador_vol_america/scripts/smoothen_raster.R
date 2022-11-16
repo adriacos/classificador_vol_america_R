@@ -42,6 +42,9 @@ smoothen_raster <- function(id){
   rm(clust)
   rm(raster_split)
   rast <- rast*10
+  
+  #values(rast) <- round_any(values(rast), 0.5)
+  
   res <- writeRaster(rast,paste("./classificador_vol_america/rasters/smoothen/",id,"_smth.tif", sep=""), overwrite=TRUE)
   res <- writeRaster(rast,paste("./classificador_vol_america/rasters/smoothen/bkp/",id,"_smth.tif", sep=""), overwrite=TRUE)
   if(exists("res")){

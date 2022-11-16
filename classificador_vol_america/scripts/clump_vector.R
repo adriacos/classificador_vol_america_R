@@ -13,46 +13,44 @@ library(terra)
 library(smoothr)
 #library(sf)
 
-clump_vector <- function(vects, arealimit=NULL){
+clump_vector <- function(vect, rast_global, arealimit=NULL){
   
   print("clump_vector")
   dir <- "./classificador_vol_america/vect/clumped/"
   
+  rast <- crop(rast_global, vect)
+  
   # vect <- readOGR(paste("./classificador_vol_america/vect/vectorised/", id, ".shp", sep=""))
   # rast <- raster(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
-  vect <- reproject_EPSG_4258_vect(vects)
-  rast <- crop(raster("./classificador_vol_america/rasters/all/global.tif"), vect)
-  
-  #treure àrea
+  id <- vect$quad_id[1]
+  print(id)
   v <- vect(vect)
   vect$area <- expanse(v)
   rm(v)
   
+  vect$id <- 1:nrow(vect)
+  # vect$id <- as.numeric(row.names(vect))
+  # if(vect[1,]$id==0){
+  #   vect$id <- vect$id +1
+  # }
   
-  vect$id <- as.numeric(row.names(vect))
-  if(vect[1,]$id==0){
-    vect$id <- vect$id +1
-  }
   
   ex <- exact_extract(rast, vect, "stdev")
   vect$sd <- ex
   vect[is.na(vect$sd),"sd"] <- 0
-  
-  #vect$tpi <- calc_TPI(rast, vect)
-  
+
   #treure DN
   ex <- exact_extract(rast, vect, "mean")
   vect$DN <- ex*10
-  vect[is.na(vect$DN),"DN"] <- 0.5
+  rm(ex)
+  vect[is.na(vect$DN),"DN"] <- 5
   rm(rast)
   gc()
-  
-  
+
   time <- Sys.time()
-  neighbours <- gTouches(vect, returnDense=FALSE, byid=TRUE, )
+  neighbours <- gTouches(vect, returnDense=FALSE, byid=TRUE)
   neighbours <- sapply(neighbours,paste,collapse=",")
   print(as.numeric(difftime(Sys.time(),time,units="secs")))
-  
   vect$neighbors <- neighbours
   rm(neighbours)
   gc()
@@ -64,6 +62,10 @@ clump_vector <- function(vects, arealimit=NULL){
   vect$npl <- 1
   vect$plare <- vect$area
   
+  if(nrow(vect)==1){
+    return(vect)
+  }
+  
   c <- 1
   time <- Sys.time()
   first500 <- FALSE
@@ -73,7 +75,6 @@ clump_vector <- function(vects, arealimit=NULL){
   first12000 <- FALSE
   first15000 <- FALSE
   repeat{
-    
     vect.min <- vect[vect$toignore==FALSE,]
    
     vect.min <- vect.min[which.min(vect.min$area),]
@@ -125,6 +126,12 @@ clump_vector <- function(vects, arealimit=NULL){
     vect.min.neighbors.min <- vect.min.neighbors[
       which.min((abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
       ,]
+    
+    if(length(vect.min.neighbors.min)==0){
+      print("No vect.min.neighbours found")
+      vect[vect$id==vect.min$id,"toignore"] <- T
+      next()
+    }
   
     if(first500 ==F && vect.min$area >= 200 && vect.min$area < 500 && abs(vect.min.neighbors.min$DN-vect.min$DN)>2){
       # no200 <- append(no200, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
@@ -237,30 +244,20 @@ clump_vector <- function(vects, arealimit=NULL){
     }
   }
   
-  # print(paste("YEs:", mean(yes, na.rm=T)))
-  # print(paste("NO200:", min(no200, na.rm=T)))
-  # print(paste("NO500:", min(no500, na.rm=T)))
-  # print(paste("NO3000:", min(no3000, na.rm=T)))
-  # print(paste("NO6000:", min(no6000, na.rm=T)))
-  # print(paste("NO9000:", min(no9000, na.rm=T)))
-  # print(paste("NO12000:", min(no12000, na.rm=T)))
-  # print(paste("NO15000:", min(no15000, na.rm=T)))
-  
-  
-  rast <- raster(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
-  #vect$tpi <- calc_TPI_by_polygons(vect, rast) 
-  
-  ex <- exact_extract(rast, vect, "stdev")
-  vect$sd <- ex
-  vect[is.na(vect$sd),"sd"] <- 0
-  
-  rm(rast)
-  gc()
-  
-  vect <- cut_clumped_by_extent(vect, id, 2)
+  # rast <- raster(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
+  # #vect$tpi <- calc_TPI_by_polygons(vect, rast) 
+  # 
+  # ex <- exact_extract(rast, vect, "stdev")
+  # vect$sd <- ex
+  # vect[is.na(vect$sd),"sd"] <- 0
+  # 
+  # rm(rast)
+  # gc()
+  # 
+  # vect <- cut_clumped_by_extent(vect, id, 2)
   
   vect.towrite <- vect[,c("npl", "plare")]
-  writeOGR(vect.towrite, dir, paste(id, "_clmp", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)  
+  writeOGR(vect.towrite, dir, paste("global_", id, "_clmp", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)  
   rm(vect.towrite)
   
   
@@ -272,15 +269,16 @@ clump_vector <- function(vects, arealimit=NULL){
   rm(vect.min)
   rm(vect.min.neighbors)
   rm(vect.min.neighbors.min)
-  
-  save_id_done(id)
-  file.remove(paste("./classificador_vol_america/vect/vectorised/", id, ".shp", sep=""))
-  file.remove(paste("./classificador_vol_america/vect/vectorised/", id, ".dbf", sep=""))
-  file.remove(paste("./classificador_vol_america/vect/vectorised/", id, ".shx", sep=""))
-  file.remove(paste("./classificador_vol_america/vect/vectorised/", id, ".prj", sep=""))
-  file.remove(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
+  # 
+  # save_id_done(id)
+  # file.remove(paste("./classificador_vol_america/vect/vectorised/", id, ".shp", sep=""))
+  # file.remove(paste("./classificador_vol_america/vect/vectorised/", id, ".dbf", sep=""))
+  # file.remove(paste("./classificador_vol_america/vect/vectorised/", id, ".shx", sep=""))
+  # file.remove(paste("./classificador_vol_america/vect/vectorised/", id, ".prj", sep=""))
+  # file.remove(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
   
   gc()
+  vect[,c("fid", "DN", "quad_id", "quad_ori", "id", "area", "sd", "npl", "plare")]
 }
 
 cut_clumped_by_extent <- function(vect, id, buffer=0){
@@ -584,33 +582,98 @@ clump_vector_global <- function(){
 
 clump_vector_combine <- function(){
   
-  vects <- reproject_EPSG_25831_vect(readOGR("./classificador_vol_america/vect/vectorised/global.shp"))
-  quads <- reproject_EPSG_25831_vect(get_quad_vect())
+  vects <- reproject_EPSG_25831_vect(readOGR("./classificador_vol_america/vect/vectorised/global_qgis.shp"))
+  vects <- reproject_EPSG_4258_vect(vects)
+  quads <- reproject_EPSG_4258_vect(get_quad_vect())
   
-  for(i in unique(quads$ori)){
+  vects$quad_id <- NA
+  vects$quad_ori <- NA
+  vects$fid <- 1: nrow(vects)
+  #vects$id <- NA
+  vects$area <- NA
+  vects$sd <- NA
+  vects$npl <- NA
+  vects$plare <- NA
+  
+  for(i in 3:length(unique(quads$ori))){
+    print(i)
     ori <- unique(quads$ori)[i]
-    quads_ori <- quads[quads$ori=ori,]
-    for(ii in nrow(quads_ori)){
-      quad <- quads[1,]
-      vects$i <- gIntersect(vects, quad, byId=T)
-      vects[vects$i=T,]$quad_id <- quad$id
-      vects[vects$i=T,]$quad_ori <- quad$ori
+    quads_ori <- quads[quads$ori==ori,]
+    m <- gIntersects(vects, quads_ori, byid=T)
+    for(ii in 1:nrow(m)){
+      #print(ii)
+      ori <- quads_ori[ii,]$ori
+      id <- quads_ori[ii,]$id
+      v <- which(m[ii,]==T)
+      vects[v,"quad_ori"] <- ori
+      vects[v,"quad_id"] <- id
     }
-    vects_ori <- vects[vects$quad_ori=ori,]
+    rm(m)
+    rm(quads_ori)
+    vects_ori <- vects[!(is.na(vects$quad_ori))&vects$quad_ori==ori,]
     vects_ori_list <- split(vects_ori, vects_ori$quad_id)
     rm(vects_ori)
-    cl <- makeCluster(detectCores()-1)
-    clusterExport(cl, list("vects_ori_list", "clump_vector"))
-    clusterEvalQ(cl, list(library(rgdal), library(rgeos), library(stringr), library(maptools)))
-    vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, 200)
-    # vects_ori_list <- lapply(vects_ori_list, clump_vector, 200)
+    vects_rest <- vects[is.na(vects$quad_ori)|vects$quad_ori!=ori,]
+    rm(vects)
+    rast <- raster("./classificador_vol_america/rasters/all/global.tif")
+    gc()
+    print("cl")
+    cl <- makeCluster(12, outfile="log_clump_global.txt")
+    clusterExport(cl, list("clump_vector"))
+    clusterEvalQ(cl, list(library(maptools), library(rgeos), library(stringr), library(terra), library(raster), library(exactextractr)))
+    #vects_ori_list <- lapply(vects_ori_list, clump_vector, rast, 200)
+    vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, rast, 200)
     stopCluster(cl)
-    
     vects_ori <- do.call(rbind, vects_ori_list)
-    vects_rest <- vects[vects$quad_ori!=ori,]
+    rm(vects_ori_list)
     vects <- rbind(vects_rest, vects_ori)
-    writeOGR(vect.towrite, "./classificador_vol_america/vect/clumped", paste("global_clmp_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
+    rm(vects_ori)
+    rm(cl)
+    gc()
+    writeOGR(vects, "./classificador_vol_america/vect/clumped", paste("global_clmp_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
   }
+  
+  quads <- reproject_EPSG_4258_vect(get_quad_vect_10km())
+  vects$quad_id <- NA
+  vects$quad_ori <- NA
+  vects$id <- NA
+  for(i in 1:length(unique(quads$ori))){
+    ori <- unique(quads$ori)[i]
+    quads_ori <- quads[quads$ori==ori,]
+    m <- gIntersects(vects, quads_ori, byid=T)
+    for(ii in 1:nrow(m)){
+      print(ii)
+      ori <- quads_ori[ii,]$ori
+      id <- quads_ori[ii,]$id
+      v <- which(m[ii,]==T)
+      vects[v,"quad_ori"] <- ori
+      vects[v,"quad_id"] <- id
+    }
+    rm(m)
+    rm(quads_ori)
+    vects_ori <- vects[!(is.na(vects$quad_ori))&vects$quad_ori==ori,]
+    vects_ori_list <- split(vects_ori, vects_ori$quad_id)
+    rm(vects_ori)
+    vects_rest <- vects[is.na(vects$quad_ori)|vects$quad_ori!=ori,]
+    rm(vects)
+    rast <- raster("./classificador_vol_america/rasters/all/global.tif")
+    gc()
+    
+    cl <- makeCluster(12, outfile="log_clump_global.txt")
+    clusterExport(cl, list("clump_vector"))
+    clusterEvalQ(cl, list(library(maptools), library(rgeos), library(stringr), library(terra), library(raster), library(exactextractr)))
+    vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, rast, 200)
+    stopCluster(cl)
+    vects_ori <- do.call(rbind, vects_ori_list)
+    rm(vects_ori_list)
+    vects <- rbind(vects_rest, vects_ori)
+    rm(vects_ori)
+    rm(cl)
+    gc()
+    writeOGR(vect.towrite, "./classificador_vol_america/vect/clumped", paste("global_clmp_2_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
+  }
+  
+  
   vects <- clump_vector(vects)
   writeOGR(vect.towrite, "./classificador_vol_america/vect/clumped", "global_clmp", driver = "ESRI Shapefile", overwrite_layer = TRUE)
 }

@@ -10,8 +10,11 @@ vectorise_raster_by_url <- function(url){
 }
 
 vectorise_raster <- function(rast){
-  #to tera::spatRaster
-  values(rast) <- round_any(values(rast), 0.5)
+  
+  #round is done in QGIS because of memory issues
+  #values(rast) <- round_any(values(rast), 0.5)
+  
+  #to terra::spatRaster
   rast <- rast(rast)
   vect <- as.polygons(rast, dissolve=T, trunc=F)
   vect <- disagg(vect)
@@ -41,8 +44,8 @@ vectorise_raster_ <- function(rast){
 }
 
 vectorise_global <- function(){
-  rast <- raster("./classificador_vol_america/rasters/smoothen/bkp/global.tif")
-  prov <- reproject_EPSG_4258_vect(readOGR("C:\Users/acosd/Desktop/CREAF/Mapes/Limits/Catalunya/LIMADM_PROVINCIA/LIMADM_PROVINCIA_BCN.shp"))
+  rast <- raster("./classificador_vol_america/rasters/global_round.tif")
+  prov <- reproject_EPSG_4258_vect(readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Limits/Catalunya/LIMADM_PROVINCIA/LIMADM_PROVINCIA_BCN.shp"))
   #vects <- reproject_EPSG_4258_vect(readOGR("./classificador_vol_america/vect/global/global.shp"))
   rast <- crop(rast, prov)
   rast <- mask(rast, prov)
