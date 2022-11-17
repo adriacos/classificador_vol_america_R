@@ -244,25 +244,10 @@ clump_vector <- function(vect, rast_global, arealimit=NULL){
     }
   }
   
-  # rast <- raster(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
-  # #vect$tpi <- calc_TPI_by_polygons(vect, rast) 
-  # 
-  # ex <- exact_extract(rast, vect, "stdev")
-  # vect$sd <- ex
-  # vect[is.na(vect$sd),"sd"] <- 0
-  # 
-  # rm(rast)
-  # gc()
-  # 
-  # vect <- cut_clumped_by_extent(vect, id, 2)
-  
   vect.towrite <- vect[,c("npl", "plare")]
   writeOGR(vect.towrite, dir, paste("global_", id, "_clmp", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)  
   rm(vect.towrite)
   
-  
-  
-  rm(vect)
   rm(vect.df)
   rm(vect.df.agg)
   rm(vect.join)
@@ -278,7 +263,7 @@ clump_vector <- function(vect, rast_global, arealimit=NULL){
   # file.remove(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
   
   gc()
-  vect[,c("fid", "DN", "quad_id", "quad_ori", "id", "area", "sd", "npl", "plare")]
+  return(vect[,c("fid", "DN", "quad_id", "quad_ori", "id", "area", "sd", "npl", "plare")])
 }
 
 cut_clumped_by_extent <- function(vect, id, buffer=0){
@@ -595,7 +580,7 @@ clump_vector_combine <- function(){
   vects$npl <- NA
   vects$plare <- NA
   
-  for(i in 3:length(unique(quads$ori))){
+  for(i in 1:length(unique(quads$ori))){
     print(i)
     ori <- unique(quads$ori)[i]
     quads_ori <- quads[quads$ori==ori,]
@@ -625,6 +610,7 @@ clump_vector_combine <- function(){
     vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, rast, 200)
     stopCluster(cl)
     vects_ori <- do.call(rbind, vects_ori_list)
+    vects_ori <- vects_ori[,c("fid", "DN", "quad_id", "quad_ori", "id", "area", "sd", "npl", "plare")]
     rm(vects_ori_list)
     vects <- rbind(vects_rest, vects_ori)
     rm(vects_ori)
@@ -637,12 +623,13 @@ clump_vector_combine <- function(){
   vects$quad_id <- NA
   vects$quad_ori <- NA
   vects$id <- NA
-  for(i in 1:length(unique(quads$ori))){
+  for(i in 2:length(unique(quads$ori))){
+    print(i)
     ori <- unique(quads$ori)[i]
     quads_ori <- quads[quads$ori==ori,]
     m <- gIntersects(vects, quads_ori, byid=T)
     for(ii in 1:nrow(m)){
-      print(ii)
+      #print(ii)
       ori <- quads_ori[ii,]$ori
       id <- quads_ori[ii,]$id
       v <- which(m[ii,]==T)
@@ -659,18 +646,20 @@ clump_vector_combine <- function(){
     rast <- raster("./classificador_vol_america/rasters/all/global.tif")
     gc()
     
+    print("cl")
     cl <- makeCluster(12, outfile="log_clump_global.txt")
     clusterExport(cl, list("clump_vector"))
     clusterEvalQ(cl, list(library(maptools), library(rgeos), library(stringr), library(terra), library(raster), library(exactextractr)))
-    vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, rast, 200)
+    vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, rast, 500)
     stopCluster(cl)
     vects_ori <- do.call(rbind, vects_ori_list)
+    vects_ori <- vects_ori[,c("fid", "DN", "quad_id", "quad_ori", "id", "area", "sd", "npl", "plare")]
     rm(vects_ori_list)
     vects <- rbind(vects_rest, vects_ori)
     rm(vects_ori)
     rm(cl)
     gc()
-    writeOGR(vect.towrite, "./classificador_vol_america/vect/clumped", paste("global_clmp_2_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
+    writeOGR(vects, "./classificador_vol_america/vect/clumped", paste("global_clmp_2_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
   }
   
   
