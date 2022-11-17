@@ -569,6 +569,7 @@ clump_vector_combine <- function(){
   
   vects <- reproject_EPSG_25831_vect(readOGR("./classificador_vol_america/vect/vectorised/global_qgis.shp"))
   vects <- reproject_EPSG_4258_vect(vects)
+  
   quads <- reproject_EPSG_4258_vect(get_quad_vect())
   
   vects$quad_id <- NA
@@ -616,10 +617,10 @@ clump_vector_combine <- function(){
     rm(vects_ori)
     rm(cl)
     gc()
-    writeOGR(vects, "./classificador_vol_america/vect/clumped", paste("global_clmp_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
+    writeOGR(vects, "./classificador_vol_america/vect/clumped", paste("global_clmp_1km_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
   }
   
-  quads <- reproject_EPSG_4258_vect(get_quad_vect_10km())
+  quads <- reproject_EPSG_4258_vect(get_quad_vect_5km())
   vects$quad_id <- NA
   vects$quad_ori <- NA
   vects$id <- NA
@@ -629,7 +630,6 @@ clump_vector_combine <- function(){
     quads_ori <- quads[quads$ori==ori,]
     m <- gIntersects(vects, quads_ori, byid=T)
     for(ii in 1:nrow(m)){
-      #print(ii)
       ori <- quads_ori[ii,]$ori
       id <- quads_ori[ii,]$id
       v <- which(m[ii,]==T)
@@ -659,7 +659,49 @@ clump_vector_combine <- function(){
     rm(vects_ori)
     rm(cl)
     gc()
-    writeOGR(vects, "./classificador_vol_america/vect/clumped", paste("global_clmp_2_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
+    writeOGR(vects, "./classificador_vol_america/vect/clumped", paste("global_clmp_5km_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
+  }
+  
+  quads <- reproject_EPSG_4258_vect(get_quad_vect_10km())
+  vects$quad_id <- NA
+  vects$quad_ori <- NA
+  vects$id <- NA
+  for(i in 2:length(unique(quads$ori))){
+    print(i)
+    ori <- unique(quads$ori)[i]
+    quads_ori <- quads[quads$ori==ori,]
+    m <- gIntersects(vects, quads_ori, byid=T)
+    for(ii in 1:nrow(m)){
+      ori <- quads_ori[ii,]$ori
+      id <- quads_ori[ii,]$id
+      v <- which(m[ii,]==T)
+      vects[v,"quad_ori"] <- ori
+      vects[v,"quad_id"] <- id
+    }
+    rm(m)
+    rm(quads_ori)
+    vects_ori <- vects[!(is.na(vects$quad_ori))&vects$quad_ori==ori,]
+    vects_ori_list <- split(vects_ori, vects_ori$quad_id)
+    rm(vects_ori)
+    vects_rest <- vects[is.na(vects$quad_ori)|vects$quad_ori!=ori,]
+    rm(vects)
+    rast <- raster("./classificador_vol_america/rasters/all/global.tif")
+    gc()
+    
+    print("cl")
+    cl <- makeCluster(12, outfile="log_clump_global.txt")
+    clusterExport(cl, list("clump_vector"))
+    clusterEvalQ(cl, list(library(maptools), library(rgeos), library(stringr), library(terra), library(raster), library(exactextractr)))
+    vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, rast, 500)
+    stopCluster(cl)
+    vects_ori <- do.call(rbind, vects_ori_list)
+    vects_ori <- vects_ori[,c("fid", "DN", "quad_id", "quad_ori", "id", "area", "sd", "npl", "plare")]
+    rm(vects_ori_list)
+    vects <- rbind(vects_rest, vects_ori)
+    rm(vects_ori)
+    rm(cl)
+    gc()
+    writeOGR(vects, "./classificador_vol_america/vect/clumped", paste("global_clmp_10km_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
   }
   
   

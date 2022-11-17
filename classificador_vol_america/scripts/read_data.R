@@ -57,6 +57,18 @@ get_quad_vect_10km <- function(){
       stop()
     }
 }
+get_quad_vect_5km <- function(){
+  if(dir.exists("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula")){
+    #return(reproject_EPSG_25831_vect(readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/1kmx1km_BCN.gpkg")))
+    return(readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/5kmx5km_BCN.gpkg"))
+  } else if(dir.exists("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula")){
+    #return(reproject_EPSG_25831_vect(readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/1kmx1km_BCN.gpkg")))
+    return(readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/5kmx5km_BCN.gpkg"))
+  }else {
+    print("ALARM - no quadricula directory found")
+    stop()
+  }
+}
 
 read_quad_ids_exported <- function(){
   tryCatch(read.table("./classificador_vol_america/rasters/ids_exported.txt")[,1],

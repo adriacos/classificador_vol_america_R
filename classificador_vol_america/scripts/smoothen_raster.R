@@ -23,14 +23,22 @@ smoothen_raster <- function(id){
     dir.create(dir)
   }
  
-  raster_split <- splitRaster(rast, 5,4, buffer=c(2,2))
-
   n.cores <- detectCores()
+  if(n.cores==12){
+    raster_split <- splitRaster(rast, 5,4, buffer=c(2,2))
+  }else if (n.cores==20){
+    raster_split <- splitRaster(rast, 6,4, buffer=c(2,2))
+  }else{
+    raster_split <- splitRaster(rast, 5,5, buffer=c(2,2))
+  }
+  
+
+  
   
   clust <- makeCluster(n.cores)
   clusterExport(clust, c("raster_split","smoothen_raster_"), envir = environment())
   clusterEvalQ(clust, library(raster))
-
+  
   for(i in i_st:12){
     print(paste("start ", i, Sys.time()))
     raster_split <- parLapply(clust, raster_split,smoothen_raster_, seed=i)
@@ -42,9 +50,7 @@ smoothen_raster <- function(id){
   rm(clust)
   rm(raster_split)
   rast <- rast*10
-  
   #values(rast) <- round_any(values(rast), 0.5)
-  
   res <- writeRaster(rast,paste("./classificador_vol_america/rasters/smoothen/",id,"_smth.tif", sep=""), overwrite=TRUE)
   res <- writeRaster(rast,paste("./classificador_vol_america/rasters/smoothen/bkp/",id,"_smth.tif", sep=""), overwrite=TRUE)
   if(exists("res")){
