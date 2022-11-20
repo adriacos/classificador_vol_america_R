@@ -44,7 +44,18 @@ get_quad_vect <- function(ids=NULL){
     #return(reproject_EPSG_25831_vect(vect))
   }
 }
-
+get_quad_vect_20km <- function(){
+  if(dir.exists("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula")){
+    #return(reproject_EPSG_25831_vect(readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/1kmx1km_BCN.gpkg")))
+    return(readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/20kmx20km_BCN.gpkg"))
+  } else if(dir.exists("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula")){
+    #return(reproject_EPSG_25831_vect(readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/1kmx1km_BCN.gpkg")))
+    return(readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/20kmx20km_BCN.gpkg"))
+  }else {
+    print("ALARM - no quadricula directory found")
+    stop()
+  }
+}
 get_quad_vect_10km <- function(){
     if(dir.exists("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula")){
       #return(reproject_EPSG_25831_vect(readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/1kmx1km_BCN.gpkg")))
@@ -64,6 +75,19 @@ get_quad_vect_5km <- function(){
   } else if(dir.exists("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula")){
     #return(reproject_EPSG_25831_vect(readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/1kmx1km_BCN.gpkg")))
     return(readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/5kmx5km_BCN.gpkg"))
+  }else {
+    print("ALARM - no quadricula directory found")
+    stop()
+  }
+}
+
+get_quad_vect_3km <- function(){
+  if(dir.exists("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula")){
+    #return(reproject_EPSG_25831_vect(readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/1kmx1km_BCN.gpkg")))
+    return(readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/3kmx3km_BCN.gpkg"))
+  } else if(dir.exists("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula")){
+    #return(reproject_EPSG_25831_vect(readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/1kmx1km_BCN.gpkg")))
+    return(readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/3kmx3km_BCN.gpkg"))
   }else {
     print("ALARM - no quadricula directory found")
     stop()
