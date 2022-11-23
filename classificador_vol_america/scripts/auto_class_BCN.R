@@ -11,19 +11,19 @@ auto_class_BCN <- function(vect){
   #ex <- exact_extract(rast, vect, "getmode")
   vect$clss_aut <- ex
   save_auto_class_BCN_vect(vect)
+  
   vect
 }
 
+
+
 getclass <- function(vects, rast){
-  
-  vects$id___ <- as.numeric(row.names(vects))
-  if(vects[1,]$id___==0){
-    vects$id___ <- vects$id___ +1
-  }
+  vects$id___ <- 1:nrow(vects)
   sapply(vects$id___, getclass_, vects, rast)
 }
 
 getclass_ <- function(id, vects, rast){
+  print(id)
   getclass__(vects[vects$id___==id,], rast)
 }
 
@@ -32,7 +32,7 @@ getclass__ <- function(vect, rast) {
   r <- mask(r, vect)
   #uniqv <- unique(r)
   tab <- table(values(r))
-  if(which.max(tab)/sum(tab)>=0.66){
+  if(max(tab)/sum(tab)>=0.66){
     c <- as.numeric(names(which.max(tab)))
     if(length(c)==0){
       return(NA)
@@ -40,7 +40,7 @@ getclass__ <- function(vect, rast) {
       return(c)
     }
   }else{
-    return NA
+    return(NA)
   }
 }
 

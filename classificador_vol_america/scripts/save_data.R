@@ -33,8 +33,8 @@ save_in_progress_classification_vector <- function(name, vectors){
   writeOGR(vectors, "./classificador_vol_america/vect/classified/inprogress/", name, driver = "ESRI Shapefile", overwrite_layer = TRUE)
 }
 
-save_metrics_vector <- function(name, vectors){
-  writeOGR(vectors, "./classificador_vol_america/vect/metrics/", paste(name, "_mtcs", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE) 
+save_metrics_vector <- function(vectors){
+  writeOGR(vectors, "./classificador_vol_america/vect/metrics/", paste(global, "_mtcs", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE) 
 }
 
 save_id_exported <- function(id){

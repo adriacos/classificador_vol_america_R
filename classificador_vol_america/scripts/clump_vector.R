@@ -60,7 +60,18 @@ clump_vector <- function(vect, rast_global, arealimit=NULL){
   
   vect$toignore <- FALSE
   vect$npl <- 1
-  vect$plare <- vect$area
+  
+  # if(!("plare" %in% colnames(vect))){
+  #   vect$plare <- round(vect$area,0)
+  # }
+  if(!("pldn" %in% colnames(vect))){
+    vect$pldn <- vect$DN
+  }
+  if(!("plmaxare" %in% colnames(vect))){
+    vect$plmaxare <- vect$area
+  }
+  
+  
   
   if(nrow(vect)==1){
     return(vect)
@@ -133,7 +144,7 @@ clump_vector <- function(vect, rast_global, arealimit=NULL){
       next()
     }
     
-    if(first500 ==F && vect.min$area >= 200 && (vect.min$area < 500 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.9||
+    if(first15000==F && (vect.min$area >= 200 && vect.min$area < 500 && abs(vect.min.neighbors.min$DN-vect.min$DN)>1.9||
        abs(vect.min.neighbors.min$sd-vect.min$sd)>0.0680371)
        ){
       # no200 <- append(no200, (abs(vect.min.neighbors$DN-vect.min$DN))^2*abs(vect.min.neighbors$sd-vect.min$sd))
@@ -209,7 +220,10 @@ clump_vector <- function(vect, rast_global, arealimit=NULL){
     DN <- sum(vect.df$DN*(vect.df$area/area))
     sd <- sum(vect.df$sd*(vect.df$area/area))
     npl <-  sum(vect.df$npl)
-    plare <- paste(str_split(vect.df[1,]$plare, ",")[[1]], str_split(vect.df[2,]$plare, ",")[[1]], collapse=",")
+    
+    # plare <- paste(vect.df[1,]$plare, vect.df[2,]$plare, sep=",")
+    pldn <- paste(vect.df[1,]$pldn, vect.df[2,]$pldn, sep=",")
+    plmaxare <- max(vect.df$area)
     #tpi <- sum(vect.df$tpi*(vect.df$area/area))
     
     vect.df <- vect.df[1,]
@@ -219,7 +233,9 @@ clump_vector <- function(vect, rast_global, arealimit=NULL){
     vect.df$id <- ids[1]
     vect.df$sd <- sd
     vect.df$npl <- npl
-    vect.df$plare <- plare
+    #vect.df$plare <- plare
+    vect.df$pldn <- pldn
+    vect.df$plmaxare <- plmaxare
     
     #vect.df$tpi <- tpi
     
@@ -259,9 +275,9 @@ clump_vector <- function(vect, rast_global, arealimit=NULL){
     vect.min <- NULL
   }
   
-  vect.towrite <- vect[,c("npl", "plare")]
-  writeOGR(vect.towrite, dir, paste("global_", id, "_clmp", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)  
-  rm(vect.towrite)
+  # vect.towrite <- vect[,c("npl", "plare")]
+  # writeOGR(vect.towrite, dir, paste("global_", id, "_clmp", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)  
+  # rm(vect.towrite)
   
   rm(vect.df)
   rm(vect.df.agg)
@@ -278,7 +294,7 @@ clump_vector <- function(vect, rast_global, arealimit=NULL){
   # file.remove(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
   
   gc()
-  return(vect[,c("fid", "DN", "quad_id", "quad_ori", "id", "area", "sd", "npl", "plare")])
+  return(vect[,c("fid", "DN", "quad_id", "quad_ori", "id", "area", "sd", "npl", "pldn", "plmaxare")])
 }
 
 cut_clumped_by_extent <- function(vect, id, buffer=0){
@@ -589,8 +605,10 @@ clump_vector_combine <- function(){
   vects$quad_ori <- NA
   vects$fid <- 1: nrow(vects)
   vects$npl <- NA
-  vects$plare <- NA
-  vects <- vects[,c("fid","quad_ori","quad_id","npl", "plare")]
+  #vects$plare <- NA
+  vects$pldn <- NA
+  vects$plmaxare <- NA
+  vects <- vects[,c("fid","quad_ori","quad_id","npl", "pldn", "plmaxare")]
   
   quads <- reproject_EPSG_4258_vect(get_quad_vect())
   print("1km")
@@ -617,7 +635,7 @@ clump_vector_combine <- function(){
     rast <- raster("./classificador_vol_america/rasters/all/global.tif")
     gc()
     
-    lapply(vects_ori_list, function(x){print(nrow(x))})
+    #lapply(vects_ori_list, function(x){print(nrow(x))})
     
     print("cl")
     cl <- makeCluster(12, outfile="log_clump_global.txt")
@@ -627,7 +645,7 @@ clump_vector_combine <- function(){
     vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, rast, 100)
     stopCluster(cl)
     vects_ori <- do.call(rbind, vects_ori_list)
-    vects_ori <- vects_ori[,c("fid", "quad_id", "quad_ori", "npl", "plare")]
+    vects_ori <- vects_ori[,c("fid", "quad_id", "quad_ori", "npl", "pldn", "plmaxare")]
     rm(vects_ori_list)
     vects <- rbind(vects_rest, vects_ori)
     rm(vects_ori)
@@ -662,7 +680,7 @@ clump_vector_combine <- function(){
     rast <- raster("./classificador_vol_america/rasters/all/global.tif")
     gc()
     
-    lapply(vects_ori_list, function(x){print(nrow(x))})
+    #lapply(vects_ori_list, function(x){print(nrow(x))})
     
     print("cl")
     cl <- makeCluster(12, outfile="log_clump_global.txt")
@@ -671,7 +689,7 @@ clump_vector_combine <- function(){
     vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, rast, 300)
     stopCluster(cl)
     vects_ori <- do.call(rbind, vects_ori_list)
-    vects_ori <- vects_ori[,c("fid", "quad_id", "quad_ori", "npl", "plare")]
+    vects_ori <- vects_ori[,c("fid", "quad_id", "quad_ori", "npl", "pldn", "plmaxare")]
     rm(vects_ori_list)
     vects <- rbind(vects_rest, vects_ori)
     rm(vects_ori)
@@ -706,7 +724,7 @@ clump_vector_combine <- function(){
     rast <- raster("./classificador_vol_america/rasters/all/global.tif")
     gc()
     
-    lapply(vects_ori_list, function(x){print(nrow(x))})
+    #lapply(vects_ori_list, function(x){print(nrow(x))})
     
     print("cl")
     cl <- makeCluster(12, outfile="log_clump_global.txt")
@@ -715,7 +733,7 @@ clump_vector_combine <- function(){
     vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, rast, 500)
     stopCluster(cl)
     vects_ori <- do.call(rbind, vects_ori_list)
-    vects_ori <- vects_ori[,c("fid", "quad_id", "quad_ori", "npl", "plare")]
+    vects_ori <- vects_ori[,c("fid", "quad_id", "quad_ori", "npl", "pldn", "plmaxare")]
     rm(vects_ori_list)
     vects <- rbind(vects_rest, vects_ori)
     rm(vects_ori)
@@ -750,7 +768,7 @@ clump_vector_combine <- function(){
     rast <- raster("./classificador_vol_america/rasters/all/global.tif")
     gc()
     
-    lapply(vects_ori_list, function(x){print(nrow(x))})
+    #lapply(vects_ori_list, function(x){print(nrow(x))})
     
     print("cl")
     cl <- makeCluster(12, outfile="log_clump_global.txt")
@@ -759,7 +777,7 @@ clump_vector_combine <- function(){
     vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, rast, 1000)
     stopCluster(cl)
     vects_ori <- do.call(rbind, vects_ori_list)
-    vects_ori <- vects_ori[,c("fid", "quad_id", "quad_ori", "npl", "plare")]
+    vects_ori <- vects_ori[,c("fid", "quad_id", "quad_ori", "npl", "pldn", "plmaxare")]
     rm(vects_ori_list)
     vects <- rbind(vects_rest, vects_ori)
     rm(vects_ori)
@@ -794,7 +812,7 @@ clump_vector_combine <- function(){
     rast <- raster("./classificador_vol_america/rasters/all/global.tif")
     gc()
     
-    lapply(vects_ori_list, function(x){print(nrow(x))})
+    #lapply(vects_ori_list, function(x){print(nrow(x))})
     
     print("cl")
     cl <- makeCluster(12, outfile="log_clump_global.txt")
@@ -803,7 +821,7 @@ clump_vector_combine <- function(){
     vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, rast, 2000)
     stopCluster(cl)
     vects_ori <- do.call(rbind, vects_ori_list)
-    vects_ori <- vects_ori[,c("fid", "quad_id", "quad_ori", "npl", "plare")]
+    vects_ori <- vects_ori[,c("fid", "quad_id", "quad_ori", "npl", "pldn", "plmaxare")]
     rm(vects_ori_list)
     vects <- rbind(vects_rest, vects_ori)
     rm(vects_ori)
@@ -811,8 +829,21 @@ clump_vector_combine <- function(){
     gc()
     writeOGR(vects, "./classificador_vol_america/vect/clumped", paste("global_clmp_20km_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
   }
-  vects <- clump_vector(vects, rast)
+  #afegir 2km, 7km, 30km i fer una funció a part on li passis el n.
   
+  vects <- clump_vector(vects, rast)
+  vects <- clump_vector(vects, rast)
+  vects <- vects[,c("fid", "npl", "pldn", "plmaxare")]
+  
+  plare <- str_split(vects$plare, ",")
+  vects$plare_mn <- sapply(lapply(plare, as.numeric), mean)
+  vects$plare_mdn <- sapply(lapply(plare, as.numeric), median)
+  vects$plare_sd<- sapply(lapply(plare, as.numeric), sd)
+  vects$plare_p10 <- sapply(lapply(plare, as.numeric), quantile, 0.10)
+  vects$plare_p25 <- sapply(lapply(plare, as.numeric), quantile, 0.25)
+  vects$plare_p75 <- sapply(lapply(plare, as.numeric), quantile, 0.75)
+  vects$plare_p90 <- sapply(lapply(plare, as.numeric), quantile, 0.90)
+  vects$plare<-NULL
   
   # abans de guardar-lo, calcular: sd, mitjana, mediana, primer quartil, tercer quartil, max i min de les plare
   writeOGR(vects, "./classificador_vol_america/vect/clumped", "global_clmp", driver = "ESRI Shapefile", overwrite_layer = TRUE)

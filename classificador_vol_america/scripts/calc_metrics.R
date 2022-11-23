@@ -12,17 +12,24 @@ library(remotes)
 library(SpaDES)
 library(geosphere)
 library(sf)
+library(ggplot2)
 
-calc_metrics <- function(name, elev, pend, clima.mean_temp, clima.amp_term, clima.mean_prec, clima.reg_pluv){
+calc_metrics <- function(){
   print("calc_metrics")
   print(Sys.time())
-  vect <- readOGR(paste("./classificador_vol_america/vect/clumped/", name, "_clmp.shp", sep=""))
-  rast <- raster(paste("./classificador_vol_america/rasters/all/", name, ".tif", sep=""))
   
-  vect$id <- as.numeric(row.names(vect))
-  if(vect[1,]$id==0){
-    vect$id <- vect$id +1
-  }
+  #afegir radiació
+  elev <- raster("C:/Users/acosd/Desktop/CREAF/Mapes/Elevacions/elevacions_CAT.tif")
+  pend <- raster("C:/Users/acosd/Desktop/CREAF/Mapes/Elevacions/pendent_CAT.tif")
+  clima.mean_temp <- raster("C:/Users/acosd/Desktop/CREAF/Mapes/Clima/ATMOSFERA_ATLES6190_TMPANUAL/ATMOSFERA_ATLES6190_TMPANUAL_5mx5m.tif")
+  clima.amp_term <- raster("C:/Users/acosd/Desktop/CREAF/Mapes/Clima/ATMOSFERA_ATLES6190_AMPTERMI/ATMOSFERA_ATLES6190_AMPTERMI_5mx5m.tif")
+  clima.mean_prec <- raster("C:/Users/acosd/Desktop/CREAF/Mapes/Clima/ATMOSFERA_ATLES6190_PPTANUAL/ATMOSFERA_ATLES6190_PPTANUAL_5mx5m.tif")
+  #clima.reg_pluv <- raster("C:/Users/acosd/Desktop/CREAF/Mapes/Clima/ATMOSFERA_ATLES6190_REGPLUVI/ATMOSFERA_ATLES6190_REGPLUVI_5mx5m.tif")
+
+  vect <- reproject_EPSG_4258_vect(readOGR(paste("./classificador_vol_america/vect/classified/automatically/global_nb.gpkg", sep="")))
+  rast <- raster(paste("./classificador_vol_america/rasters/all/global.tif", sep=""))
+  
+  vect$id <- 1:nrow(vect)
   
   ex <- exact_extract(rast, vect, "stdev")
   vect$std <- ex
@@ -36,6 +43,8 @@ calc_metrics <- function(name, elev, pend, clima.mean_temp, clima.amp_term, clim
   #rm(rast)
   rm(ex)
   gc()
+  
+  writeOGR(vect, "./classificador_vol_america/vect/classified/automatically/", "global_mtc", driver = "ESRI Shapefile", overwrite_layer = TRUE)
   
   ex <- exact_extract(elev, vect, "mean")
   vect$elv <- ex
@@ -52,24 +61,27 @@ calc_metrics <- function(name, elev, pend, clima.mean_temp, clima.amp_term, clim
   ex <- exact_extract(clima.mean_prec, vect, "mean")
   vect$mpt <- ex
   #vect[is.na(vect$mpt),"mpt"] <- 0
-  ex <- exact_extract(clima.reg_pluv, vect, "mean")
-  vect$rpl <- ex
+  # ex <- exact_extract(clima.reg_pluv, vect, "mean")
+  # vect$rpl <- ex
   #vect[is.na(vect$rpl),"rpl"] <- 0
-  
+  rm(elev)
+  rm(pend)
+  rm(clima.mean_temp)
+  rm(clima.amp_term)
+  rm(clima.mean_prec)
   rm(ex)
-  
-  neighbours <- gTouches(vect, returnDense=FALSE, byid=TRUE, )
-  neighbours <- sapply(neighbours,paste,collapse=",")
-  vect$nbr <- neighbours
-  rm(neighbours)
   gc()
   
+  writeOGR(vect, "./classificador_vol_america/vect/classified/automatically/", "global_mtc", driver = "ESRI Shapefile", overwrite_layer = TRUE)
+  
+  
+ 
+  
   #mirar si ho ha com a llista o vector o què
-  coords <- getSpPPolygonsLabptSlots(vect)
+  coords <- coordinates(vect)
   #coords <- coordinates(centr)
   vect$lat <- coords[,2]
   vect$lng <- coords[,1]
-  rm(centr)
   rm(coords)
   
   sp_vect <- vect(vect)
@@ -80,20 +92,32 @@ calc_metrics <- function(name, elev, pend, clima.mean_temp, clima.amp_term, clim
   vect$shp <- (2*pi*sqrt(vect$are))/vect$per
   #vect$shp <- vect$per/sqrt(4*pi*vect$are)
   rm(sp_vect)
+  gc()
+  writeOGR(vect, "./classificador_vol_america/vect/classified/automatically/", "global_mtc", driver = "ESRI Shapefile", overwrite_layer = TRUE)
   
   #vect$rug <- calc_ruggedness(rast, vect, vect$are)
-
   vect$tpi <- calc_TPI(rast, vect)
-  
+  writeOGR(vect, "./classificador_vol_america/vect/classified/automatically/", "global_mtc", driver = "ESRI Shapefile", overwrite_layer = TRUE)
   vect$sqr <- calc_squaredness(vect)
-  
   #vect$tri <- calc_TRI(rast, vect)
-
   #vect$rog <- calc_roughness(rast, vect)
-  
   rm(rast)
+  gc()
+  writeOGR(vect, "./classificador_vol_america/vect/classified/automatically/", "global_mtc", driver = "ESRI Shapefile", overwrite_layer = TRUE)
   
+  
+  neighbours <- gTouches(vect, returnDense=FALSE, byid=TRUE)
+  neighbours <- sapply(neighbours,paste,collapse=",")
+  vect$nbr <- neighbours
+  rm(neighbours)
+  gc()
+  writeOGR(vect, "./classificador_vol_america/vect/classified/automatically/", "global_mtc", driver = "ESRI Shapefile", overwrite_layer = TRUE)
+
+  # cluster <- makeCluster(detectCores()-2, outfile="calc_neighbor_metrics_log.txt")
+  # clusterExport(cluster, list("vect","calc_neighbor_metrics_"))
   l <- lapply(vect$id, calc_neighbor_metrics_, vect)
+  # l <- parLapply(cluster, vect$id, calc_neighbor_metrics_, vect)
+  # stopCluster()
   vect <- cbind(vect, do.call("rbind", l))
   
   l <- lapply(vect$id, calc_neighbor_metrics_2_, vect)
@@ -101,25 +125,42 @@ calc_metrics <- function(name, elev, pend, clima.mean_temp, clima.amp_term, clim
   
   vect <- vect[,-which(names(vect)=="nbr")]
   
-  save_metrics_vector(name, vect)
+  save_metrics_vector(vect)
   print(Sys.time())
 }
 
 calc_neighbor_metrics_ <- function(id, vect){
+  print(id)
+  if(vect[vect$id==id,]$nbr==""){
+    return(data.frame(t(unlist(list("n_mn_mn"=NA,"n_sd_mn"=NA, "n_mn_mdn"=NA, "n_pnt_m"=NA, "n_pnt_t"=NA,
+                                    "n_nt_mn"=NA,"n_nt_tp"=NA,"n_sd_tpi"=NA,"n_sd_slp"=NA,"n_sd_shp"=NA,
+                                    "n_mn_sqr"=NA,"n_sd_sqr"=NA,
+                                    "n_mn_std"=NA, "n_mn_slp"=NA, "n_mn_shp"=NA, "n_mn_tpi"=NA)))))
+  }
   
   n_mn_mn <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$mn, na.rm=T)
   n_sd_mn <- sd(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$mn, na.rm=T)
  
+  if(is.na(vect[vect$id==id,]$mn)){
+    n_pnt_m <- NA
+  }else{
   n_pnt_m <-  length(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],][
-    abs(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$mn - vect$mn)<= 0.5])/
+    !is.na(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$mn) & 
+    abs(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$mn - vect[vect$id==id,]$mn)<= 0.5,])/
     length(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],])
+  }
   
+  if(is.na(vect[vect$id==id,]$tpi)){
+    n_pnt_t <- NA
+  }else{
   n_pnt_t <-  length(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],][
-    abs(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$tpi - vect$tpi)<= 0.5])/
+    !is.na(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$tpi) & 
+      abs(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$tpi - vect[vect$id==id,]$tpi)<= 0.5,])/
     length(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],])
+  }
   
-  n_nt_mn <- min(abs(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$mn - vect$mn))
-  n_nt_tp <- min(abs(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$tpi - vect$tpi))
+  n_nt_mn <- min(abs(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$mn - vect[vect$id==id,]$mn))
+  n_nt_tp <- min(abs(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$tpi - vect[vect$id==id,]$tpi))
   
   n_mn_mdn <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$mdn, na.rm=T)
   
@@ -136,12 +177,21 @@ calc_neighbor_metrics_ <- function(id, vect){
   
   n_mn_sqr <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$sqr, na.rm=T)
   n_sd_sqr <- sd(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$sqr, na.rm=T)
-  
-  return(data.frame(t(unlist(list("n_mn_mn"=n_mn_mn,"n_sd_mn"=n_sd_mn, "n_mn_mdn"=n_mn_mdn, 
-                           "n_mn_std"=n_mn_std, "n_mn_slp"=n_mn_slp, "n_mn_shp"=n_mn_shp, "n_std_shp"=n_std_shp, "n_mn_tpi"=n_mn_tpi)))))
+
+  return(data.frame(t(unlist(list("n_mn_mn"=n_mn_mn,"n_sd_mn"=n_sd_mn, "n_mn_mdn"=n_mn_mdn, "n_pnt_m"=n_pnt_m, "n_pnt_t"=n_pnt_t,
+                                  "n_nt_mn"=n_nt_mn,"n_nt_tp"=n_nt_tp,"n_sd_tpi"=n_sd_tpi,"n_sd_slp"=n_sd_slp,"n_sd_shp"=n_sd_shp,
+                                  "n_mn_sqr"=n_mn_sqr,"n_sd_sqr"=n_sd_sqr,
+                           "n_mn_std"=n_mn_std, "n_mn_slp"=n_mn_slp, "n_mn_shp"=n_mn_shp, "n_mn_tpi"=n_mn_tpi)))))
 }
 
 calc_neighbor_metrics_2_ <- function(id, vect){
+  print(id)
+  if(vect[vect$id==id,]$nbr==""){
+    return(data.frame(t(unlist(list("n_mn_mn_2"=NA,"n_sd_mn_2"=NA, "n_mn_mdn_2"=NA, 
+                                    "n_mn_std_2"=NA, "n_mn_tpi_2"=NA, "n_sd_tpi_2"=NA, 
+                                    "n_mn_slp_2"=NA, "n_sd_slp_2"=NA, "n_mn_shp_2"=NA, 
+                                    "n_sd_shp_2"=NA, "n_mn_sqr_2"=NA, "n_sd_sqr_2"=NA)))))
+  }
   
   n_mn_mn_2 <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$n_mn_mn, na.rm=T)
   n_sd_mn_2 <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$n_sd_mn, na.rm=T)
@@ -156,14 +206,16 @@ calc_neighbor_metrics_2_ <- function(id, vect){
   n_mn_slp_2 <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$n_mn_slp, na.rm=T)
   n_sd_slp_2 <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$n_sd_slp, na.rm=T)
   
-  n_mn_shp <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$n_mn_shp, na.rm=T)
+  n_mn_shp_2 <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$n_mn_shp, na.rm=T)
   n_sd_shp_2 <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$n_sd_shp, na.rm=T)
   
-  n_mn_sqr <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$n_mn_sqr, na.rm=T)
+  n_mn_sqr_2 <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$n_mn_sqr, na.rm=T)
   n_sd_sqr_2 <- mean(vect[vect$id %in% str_split(vect[vect$id==id,]$nbr, ",")[[1]],]$n_sd_sqr, na.rm=T)
   
-  return(data.frame(t(unlist(list("n_mn_mn"=n_mn_mn,"n_sd_mn"=n_sd_mn, "n_mn_mdn"=n_mn_mdn, 
-                                  "n_mn_std"=n_mn_std, "n_mn_slp"=n_mn_slp, "n_mn_shp"=n_mn_shp, "n_std_shp"=n_std_shp, "n_mn_tpi"=n_mn_tpi)))))
+  return(data.frame(t(unlist(list("n_mn_mn_2"=n_mn_mn_2,"n_sd_mn_2"=n_sd_mn_2, "n_mn_mdn_2"=n_mn_mdn_2, 
+                                  "n_mn_std_2"=n_mn_std_2, "n_mn_tpi_2"=n_mn_tpi_2, "n_sd_tpi_2"=n_sd_tpi_2, 
+                                  "n_mn_slp_2"=n_mn_slp_2, "n_sd_slp_2"=n_sd_slp_2, "n_mn_shp_2"=n_mn_shp_2, 
+                                  "n_sd_shp_2"=n_sd_shp_2, "n_mn_sqr_2"=n_mn_sqr_2, "n_sd_sqr_2"=n_sd_sqr_2)))))
 }
 
 
@@ -194,14 +246,7 @@ calc_TRI <- function(rast, vect){
 
 calc_squaredness <- function(vect){
   #per calcular mètriques de com de quadrat és
-  
-  #ATENCIó: els marges de les quadrícules tenen valors no reals, caldria veure com solucionar-ho.
-  
-  #Possibles solucions:
-  #- Ajuntar els quatre clumpeds del voltant, tornar a passar clump_vector (per, amb sort, ajuntar els polígons adjacents),
-  #    calcular mètriques i tornar a tallar per extensió
-  #- Ajuntar tots els clumpeds de CAT/BCN, tornar a passar clumped (però trigarà molt), calcular mètriques i, si cal, tornar a tallar
-  #- Treure des d'un principi els rasters per quadrícules de 2kmx2km amb centre als centroides, calcular mètriques i retallar a 1x1km
+ 
   v <- vect
   sf <- st_as_sf(v)
   
@@ -223,6 +268,7 @@ calc_squaredness <- function(vect){
   #sqr_p <- 1/(v$vtx/sqrt(v$peri))
   sqr_p <- 1/(v$vtx/log(v$peri))
   #sqr_p <- 1/(v$vtx/v$peri)
+  sqr_p
 }
 
 calc_longness <- function(vect){
