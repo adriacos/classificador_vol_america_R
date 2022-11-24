@@ -25,9 +25,9 @@ smoothen_raster <- function(id){
  
   n.cores <- detectCores()
   if(n.cores==12){
-    raster_split <- splitRaster(rast, 5,4, buffer=c(2,2))
-  }else if (n.cores==20){
     raster_split <- splitRaster(rast, 6,4, buffer=c(2,2))
+  }else if (n.cores==20){
+    raster_split <- splitRaster(rast, 5,4, buffer=c(2,2))
   }else{
     raster_split <- splitRaster(rast, 5,5, buffer=c(2,2))
   }
@@ -55,7 +55,7 @@ smoothen_raster <- function(id){
   res <- writeRaster(rast,paste("./classificador_vol_america/rasters/smoothen/bkp/",id,"_smth.tif", sep=""), overwrite=TRUE)
   if(exists("res")){
     unlink(dir, recursive = TRUE)
-    #file.remove(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
+    file.remove(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
   }
   rm(dir)
   rm(res)
@@ -68,11 +68,9 @@ smoothen_raster_ <- function(rast, seed=8){
     m <- mean(rast[adj[,2]][rast[adj[,2]]>rast[x]-0.15&rast[adj[,2]]<rast[x]+0.15], na.rm=TRUE)
     m
   }
-  
   set.seed(seed)
   cells <- cellFromRow(rast, c(1:nrow(rast)))
   cells <- sample(cells)
-  
   values(rast)[cells] <- sapply(cells, smoothen_raster__, rast=rast)
   rast
 }
