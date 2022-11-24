@@ -14,7 +14,6 @@ source("./classificador_vol_america/scripts/create_export_1956_class_diba_raster
 
 
 ini <- function(){
-  
   #maximum number of parallel clump_vector that can be done. Theoretically equal 
   #to the number of cores, but practically limited to 5 due to memory issues
   #cores <- detectCores()
@@ -125,8 +124,6 @@ save_1956_diba_to_rasters <- function(){
   
   rm(lat)
   rm(long)
-  
-  
 }
 
 save_ortofotos_to_rasters <- function(n=NULL){
