@@ -26,105 +26,108 @@ calc_metrics <- function(){
   clima.mean_prec <- raster("C:/Users/acosd/Desktop/CREAF/Mapes/Clima/ATMOSFERA_ATLES6190_PPTANUAL/ATMOSFERA_ATLES6190_PPTANUAL_5mx5m.tif")
   #clima.reg_pluv <- raster("C:/Users/acosd/Desktop/CREAF/Mapes/Clima/ATMOSFERA_ATLES6190_REGPLUVI/ATMOSFERA_ATLES6190_REGPLUVI_5mx5m.tif")
 
-  vect <- reproject_EPSG_4258_vect(readOGR(paste("./classificador_vol_america/vect/classified/automatically/global_nb.gpkg", sep="")))
+  if(file.exists("./classificador_vol_america/vect/classified/automatically/global_mtc.shp")){
+    vect <- reproject_EPSG_4258_vect(readOGR(paste("./classificador_vol_america/vect/classified/automatically/global_mtc.shp", sep="")))
+  }else{
+    vect <- reproject_EPSG_4258_vect(readOGR(paste("./classificador_vol_america/vect/classified/automatically/global_nb.gpkg", sep="")))
+  }
   rast <- raster(paste("./classificador_vol_america/rasters/all/global.tif", sep=""))
   
-  vect$id <- 1:nrow(vect)
+  if(!"mdn"%in%colnames(vect)){
+    vect$id <- 1:nrow(vect)
+    ex <- exact_extract(rast, vect, "stdev")
+    vect$std <- ex
+    #vect[is.na(vect$std),"std"] <- 0
+    ex <- exact_extract(rast, vect, "mean")
+    vect$mn <- ex
+    #vect[is.na(vect$mn),"mn"] <- 0
+    ex <- exact_extract(rast, vect, "median")
+    vect$mdn <- ex
+    #vect[is.na(vect$mdn),"mdn"] <- 0
+    rm(ex)
+    gc()
+    writeOGR(vect, "./classificador_vol_america/vect/classified/automatically/", "global_mtc", driver = "ESRI Shapefile", overwrite_layer = TRUE)
+  }
   
-  ex <- exact_extract(rast, vect, "stdev")
-  vect$std <- ex
-  #vect[is.na(vect$std),"std"] <- 0
-  ex <- exact_extract(rast, vect, "mean")
-  vect$mn <- ex
-  #vect[is.na(vect$mn),"mn"] <- 0
-  ex <- exact_extract(rast, vect, "median")
-  vect$mdn <- ex
-  #vect[is.na(vect$mdn),"mdn"] <- 0
-  #rm(rast)
-  rm(ex)
-  gc()
-  
-  writeOGR(vect, "./classificador_vol_america/vect/classified/automatically/", "global_mtc", driver = "ESRI Shapefile", overwrite_layer = TRUE)
-  
-  ex <- exact_extract(elev, vect, "mean")
-  vect$elv <- ex
-  #vect[is.na(vect$elv),"elv"] <- 0
-  ex <- exact_extract(pend, vect, "mean")
-  vect$slp <- ex
-  #vect[is.na(vect$slp),"slp"] <- 0
-  ex <- exact_extract(clima.mean_temp, vect, "mean")
-  vect$mtp <- ex
-  #vect[is.na(vect$mtp),"mtp"] <- 0
-  ex <- exact_extract(clima.amp_term, vect, "mean")
-  vect$apt <- ex
-  #vect[is.na(vect$apt),"apt"] <- 0
-  ex <- exact_extract(clima.mean_prec, vect, "mean")
-  vect$mpt <- ex
-  #vect[is.na(vect$mpt),"mpt"] <- 0
-  # ex <- exact_extract(clima.reg_pluv, vect, "mean")
-  # vect$rpl <- ex
-  #vect[is.na(vect$rpl),"rpl"] <- 0
-  rm(elev)
-  rm(pend)
-  rm(clima.mean_temp)
-  rm(clima.amp_term)
-  rm(clima.mean_prec)
-  rm(ex)
-  gc()
-  
-  writeOGR(vect, "./classificador_vol_america/vect/classified/automatically/", "global_mtc", driver = "ESRI Shapefile", overwrite_layer = TRUE)
-  
-  
+  if(!"mpt"%in%colnames(vect)){
+    ex <- exact_extract(elev, vect, "mean")
+    vect$elv <- ex
+    #vect[is.na(vect$elv),"elv"] <- 0
+    ex <- exact_extract(pend, vect, "mean")
+    vect$slp <- ex
+    #vect[is.na(vect$slp),"slp"] <- 0
+    ex <- exact_extract(clima.mean_temp, vect, "mean")
+    vect$mtp <- ex
+    #vect[is.na(vect$mtp),"mtp"] <- 0
+    ex <- exact_extract(clima.amp_term, vect, "mean")
+    vect$apt <- ex
+    #vect[is.na(vect$apt),"apt"] <- 0
+    ex <- exact_extract(clima.mean_prec, vect, "mean")
+    vect$mpt <- ex
+    #vect[is.na(vect$mpt),"mpt"] <- 0
+    # ex <- exact_extract(clima.reg_pluv, vect, "mean")
+    # vect$rpl <- ex
+    #vect[is.na(vect$rpl),"rpl"] <- 0
+    rm(elev)
+    rm(pend)
+    rm(clima.mean_temp)
+    rm(clima.amp_term)
+    rm(clima.mean_prec)
+    rm(ex)
+    gc()
+    writeOGR(vect, "./classificador_vol_america/vect/classified/automatically/", "global_mtc", driver = "ESRI Shapefile", overwrite_layer = TRUE)
+  }
  
   
-  #mirar si ho ha com a llista o vector o què
-  coords <- coordinates(vect)
-  #coords <- coordinates(centr)
-  vect$lat <- coords[,2]
-  vect$lng <- coords[,1]
-  rm(coords)
+   
+  if(!"shp"%in%colnames(vect)){
+    coords <- coordinates(vect)
+    vect$lat <- coords[,2]
+    vect$lng <- coords[,1]
+    rm(coords)
+    sp_vect <- vect(vect)
+    vect$are <- expanse(sp_vect)
+    vect$per <- perim(sp_vect)
+    #mirar quin ens agrada més
+    vect$shp <- (2*pi*sqrt(vect$are))/vect$per
+    #vect$shp <- vect$per/sqrt(4*pi*vect$are)
+    rm(sp_vect)
+    gc()
+    writeOGR(vect, "./classificador_vol_america/vect/classified/automatically/", "global_mtc", driver = "ESRI Shapefile", overwrite_layer = TRUE)
+  }
   
-  sp_vect <- vect(vect)
-  vect$are <- expanse(sp_vect)
-  vect$per <- perim(sp_vect)
+  if(!"tpi"%in%colnames(vect)){
+    #vect$rug <- calc_ruggedness(rast, vect, vect$are)
+    vect$tpi <- calc_TPI(rast, vect)
+    writeOGR(vect, "./classificador_vol_america/vect/classified/automatically/", "global_mtc", driver = "ESRI Shapefile", overwrite_layer = TRUE)
+  }
+  if(!"sqr"%in%colnames(vect)){
+    vect$sqr <- calc_squaredness(vect)
+    #vect$tri <- calc_TRI(rast, vect)
+    #vect$rog <- calc_roughness(rast, vect)
+    rm(rast)
+    gc()
+    writeOGR(vect, "./classificador_vol_america/vect/classified/automatically/", "global_mtc", driver = "ESRI Shapefile", overwrite_layer = TRUE)
+  }
   
-  #mirar quin ens agrada més
-  vect$shp <- (2*pi*sqrt(vect$are))/vect$per
-  #vect$shp <- vect$per/sqrt(4*pi*vect$are)
-  rm(sp_vect)
-  gc()
-  writeOGR(vect, "./classificador_vol_america/vect/classified/automatically/", "global_mtc", driver = "ESRI Shapefile", overwrite_layer = TRUE)
-  
-  #vect$rug <- calc_ruggedness(rast, vect, vect$are)
-  vect$tpi <- calc_TPI(rast, vect)
-  writeOGR(vect, "./classificador_vol_america/vect/classified/automatically/", "global_mtc", driver = "ESRI Shapefile", overwrite_layer = TRUE)
-  vect$sqr <- calc_squaredness(vect)
-  #vect$tri <- calc_TRI(rast, vect)
-  #vect$rog <- calc_roughness(rast, vect)
-  rm(rast)
-  gc()
-  writeOGR(vect, "./classificador_vol_america/vect/classified/automatically/", "global_mtc", driver = "ESRI Shapefile", overwrite_layer = TRUE)
-  
-  
-  neighbours <- gTouches(vect, returnDense=FALSE, byid=TRUE)
-  neighbours <- sapply(neighbours,paste,collapse=",")
-  vect$nbr <- neighbours
-  rm(neighbours)
-  gc()
-  writeOGR(vect, "./classificador_vol_america/vect/classified/automatically/", "global_mtc", driver = "ESRI Shapefile", overwrite_layer = TRUE)
-
-  # cluster <- makeCluster(detectCores()-2, outfile="calc_neighbor_metrics_log.txt")
-  # clusterExport(cluster, list("vect","calc_neighbor_metrics_"))
-  l <- lapply(vect$id, calc_neighbor_metrics_, vect)
-  # l <- parLapply(cluster, vect$id, calc_neighbor_metrics_, vect)
-  # stopCluster()
-  vect <- cbind(vect, do.call("rbind", l))
-  
-  l <- lapply(vect$id, calc_neighbor_metrics_2_, vect)
-  vect <- cbind(vect, do.call("rbind", l))
-  
-  vect <- vect[,-which(names(vect)=="nbr")]
-  
+  if(!"n_mn_mn_2"%in%colnames(vect)){
+    neighbours <- gTouches(vect, returnDense=FALSE, byid=TRUE)
+    neighbours <- sapply(neighbours,paste,collapse=",")
+    vect$nbr <- neighbours
+    rm(neighbours)
+    gc()
+    # cluster <- makeCluster(detectCores()-2, outfile="calc_neighbor_metrics_log.txt")
+    # clusterExport(cluster, list("vect","calc_neighbor_metrics_"))
+    l <- lapply(vect$id, calc_neighbor_metrics_, vect)
+    # l <- parLapply(cluster, vect$id, calc_neighbor_metrics_, vect)
+    # stopCluster()
+    vect <- cbind(vect, do.call("rbind", l))
+    l <- lapply(vect$id, calc_neighbor_metrics_2_, vect)
+    vect <- cbind(vect, do.call("rbind", l))
+    vect$nbr <- NULL
+    rm(l)
+    writeOGR(vect, "./classificador_vol_america/vect/classified/automatically/", "global_mtc", driver = "ESRI Shapefile", overwrite_layer = TRUE)
+  }
   save_metrics_vector(vect)
   print(Sys.time())
 }
@@ -274,13 +277,63 @@ calc_squaredness <- function(vect){
 calc_longness <- function(vect){
   calc_longest_line_within(vect)/vect$are
 }
-calc_longest_line_within <- function(vect){
+
+calc_longest_line_within <- function(vects){
+  vects <- reproject_EPSG_25831_vect(vect)
+  #vects$id___ <- 1:nrow(vects)
   
-  #Treure vèrtex del polígon
-  #fer matriu de distàncies entre cada vèrtex
-  #convertir relacions en línies
-  #terra::relation -> quedar-nos només amb les línies que estiguin "within" el polígon
-  #quedar-nos amb la més llarga
+  n.cores <- detectCores()-2
+  vects_split <- split(vects, factor(sort(rank(row.names(vects))%%n.cores)))
   
+  
+  clust <- makeCluster(n.cores, outfile="calc_longest_line_log.txt")
+  clusterExport(clust, c("vects_split","calc_longest_line_within_", "calc_longest_line_within__"), envir =  environment())
+  clusterEvalQ(clust, library(sf))
+  lngs_ln_split <- parLapply(clust, vects_split, function(vcts){
+    lngs_ln <- sapply(1:nrow(vcts), function(i, vcts){
+      calc_longest_line_within__(vcts[i,])
+    }, vcts)
+  })
+  # lngs_ln <- parSapply(clust,ids, function(i, vects){
+  #   print(length(vects))
+  #   calc_longest_line_within__(vects[i,])
+  # }, vects)
+  stopCluster(clust)
+  
+  
+}
+
+calc_longest_line_within_ <- function(i, vects){
+  print(length(vects))
+  calc_longest_line_within__(vects[i,])
+}
+  
+calc_longest_line_within__ <- function(v){
+  print(v$id)
+  v <- st_as_sf(v)
+  vb <- st_buffer(v, -0.3, nQuadSegs=1)
+  v_coords <- st_coordinates(vb)
+  vertices <- st_multipoint(v_coords[,c(1,2)]) %>% st_zm() %>% 
+  st_geometry() %>% st_cast('POINT')
+  distances <- st_distance(vertices)
+  
+  
+  order <- order(distances, decreasing=T)
+  order <- cbind(row(distances)[order], col(distances)[order])
+  order <- do.call(rbind, unique(lapply(1:nrow(order),function(i){
+    sort(order[i,])
+    })))
+  dist <- 0
+  for(rw in 1:nrow(order)){
+    v1 <- vertices[order[rw,1]]
+    v2 <- vertices[order[rw,2]]
+    pair <- st_combine(c(v1, v2))
+    line <- st_cast(pair, "LINESTRING") %>% st_set_crs(st_crs(v))
+    if(length(st_crosses(v, line)[[1]])==0){
+      dist <- distances[order[rw,1],order[rw,2]]
+      break()
+    }
+  }
+  return(dist)
   
 }
