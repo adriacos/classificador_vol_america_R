@@ -20,10 +20,9 @@ ini <- function(){
   cores <- 5
   
   while(TRUE){
-    try_export_corrupted()
+    #try_export_corrupted()
     smoothen_rasters_all()
     save_ortofotos_to_rasters()
-    
   }
   return(0)
   
