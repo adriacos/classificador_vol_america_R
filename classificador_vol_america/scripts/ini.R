@@ -127,14 +127,24 @@ save_1956_diba_to_rasters <- function(){
 
 save_ortofotos_to_rasters <- function(n=NULL){
   print("save_ortofotos_to_rasters")
-  done <- get_done_ids() 
+  # done <- get_done_ids() 
+  smoothen <- get_smoothen_ids() 
   corrupted <- get_corrupted_ids() 
   
-  ids <- read_quad_ids_not_exported(notin=append(done, corrupted))
+  ids <- read_quad_ids_not_exported(notin=append(corrupted, smoothen))
+  
+  all <- read_quad_ids()
   
   if(dir.exists("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula")){
-   ids <- rev(ids)
-  } 
+    ids <- ids[ids %in% all[round((length(all)/4)*3):length(all)]]
+    ids <- rev(ids)
+  }else if(dir.exists("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula")){
+    ids <- ids[ids %in% all[1:(length(all)/2)-1]]
+  }
+  # else if(dir.exists("./classificador_vol_america/data/Quadricula")){
+  #   ids <- ids[ids %in% all[(length(all)/2):(round((length(all)/4)*3)-1)]]
+  #   ids <- rev(ids)
+  # }
   
   if(!is.null(n)){
     ids <- ids[1:n]

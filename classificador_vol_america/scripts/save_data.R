@@ -57,6 +57,27 @@ save_id_corrupted <- function(id){
   }
 }
 
+save_id_smoothen <- function(id){
+  ids <- get_smoothen_ids()
+  if(is.null(ids)){
+    write.table(id, "./classificador_vol_america/rasters/ids_smoothen.txt")
+  }else{
+    ids <- append(ids, id)
+    ids <- unique(ids)
+    write.table(ids, "./classificador_vol_america/rasters/ids_smoothen.txt")
+  }
+}
+
+remove_id_exported <- function(id){
+  ids <- get_exported_ids()
+  if(is.null(ids)){
+    return(FALSE)
+  }else{
+    ids <- ids[ids!=id]
+    write.table(ids, "./classificador_vol_america/rasters/ids_exported.txt")
+  }
+}
+
 remove_id_corrupted <- function(id){
   ids <- get_corrupted_ids()
   if(is.null(ids)){

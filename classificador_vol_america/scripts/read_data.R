@@ -94,6 +94,45 @@ get_quad_vect_3km <- function(){
   }
 }
 
+get_quad_vect_2km <- function(){
+  if(dir.exists("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula")){
+    #return(reproject_EPSG_25831_vect(readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/1kmx1km_BCN.gpkg")))
+    return(readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/2kmx2km_BCN.gpkg"))
+  } else if(dir.exists("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula")){
+    #return(reproject_EPSG_25831_vect(readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/1kmx1km_BCN.gpkg")))
+    return(readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/2kmx2km_BCN.gpkg"))
+  }else {
+    print("ALARM - no quadricula directory found")
+    stop()
+  }
+}
+
+get_quad_vect_7km <- function(){
+  if(dir.exists("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula")){
+    #return(reproject_EPSG_25831_vect(readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/1kmx1km_BCN.gpkg")))
+    return(readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/7kmx7km_BCN.gpkg"))
+  } else if(dir.exists("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula")){
+    #return(reproject_EPSG_25831_vect(readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/1kmx1km_BCN.gpkg")))
+    return(readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/7kmx7km_BCN.gpkg"))
+  }else {
+    print("ALARM - no quadricula directory found")
+    stop()
+  }
+}
+
+get_quad_vect_30km <- function(){
+  if(dir.exists("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula")){
+    #return(reproject_EPSG_25831_vect(readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/1kmx1km_BCN.gpkg")))
+    return(readOGR("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula/30kmx30km_BCN.gpkg"))
+  } else if(dir.exists("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula")){
+    #return(reproject_EPSG_25831_vect(readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/1kmx1km_BCN.gpkg")))
+    return(readOGR("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula/30kmx30km_BCN.gpkg"))
+  }else {
+    print("ALARM - no quadricula directory found")
+    stop()
+  }
+}
+
 read_quad_ids_exported <- function(){
   tryCatch(read.table("./classificador_vol_america/rasters/ids_exported.txt")[,1],
            error = function(e)
@@ -182,7 +221,16 @@ get_metrics_not_classified_ids <- function(){
 
 get_exported_ids <- function(){
   print("get_exported_ids")
-  sub(".tif", "", list.files("./classificador_vol_america/rasters/exported", pattern = "\\.tif$"), "")
+  tryCatch(read.table("./classificador_vol_america/rasters/ids_exported.txt")[,1],
+           error = function(e)
+             return(NULL))
+  
+  
+  
+  # bkp <- as.numeric(sub("_smth.tif", "", list.files("E:/CREAF/Classificador/rasters/smoothen/bkp", pattern = "\\.tif$"), ""))
+  # bkp <- bkp[!is.na(bkp)]
+  # 
+  # # sub(".tif", "", list.files("./classificador_vol_america/rasters/exported", pattern = "\\.tif$"), "")
 }
 
 get_exported_not_smoothen_ids <- function(){
@@ -232,9 +280,17 @@ get_vectorised_files <- function(){
 
 get_smoothen_ids <- function(){
   print("get_smoothen_ids")
-  files <- list.files("./classificador_vol_america/rasters/smoothen/bkp", pattern = "\\_smth.tif$")
-  ids <- sub("_smth.tif","",files)
-  ids
+  tryCatch(read.table("./classificador_vol_america/rasters/ids_smoothen.txt")[,1],
+           error = function(e)
+             return(NULL))
+  
+  # files <- list.files("./classificador_vol_america/rasters/smoothen/bkp", pattern = "\\_smth.tif$")
+  # ids <- sub("_smth.tif","",files)
+  # ids
+  # for(id in ids){
+  #   save_id_smoothen(id)
+  # }
+  
 }
 # get_smoothen_files <- function(){
 #   print("get_plots_smoothen_done")

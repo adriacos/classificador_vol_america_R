@@ -610,225 +610,298 @@ clump_vector_combine <- function(){
   vects$plmaxare <- NA
   vects <- vects[,c("fid","quad_ori","quad_id","npl", "pldn", "plmaxare")]
   
-  quads <- reproject_EPSG_4258_vect(get_quad_vect())
-  print("1km")
-  for(i in 1:length(unique(quads$ori))){
-    print(i)
-    ori <- unique(quads$ori)[i]
-    quads_ori <- quads[quads$ori==ori,]
-    m <- gIntersects(vects, quads_ori, byid=T)
-    for(ii in 1:nrow(m)){
-      #print(ii)
-      ori <- quads_ori[ii,]$ori
-      id <- quads_ori[ii,]$id
-      v <- which(m[ii,]==T)
-      vects[v,"quad_ori"] <- ori
-      vects[v,"quad_id"] <- id
+  for (ikm in c(1,2,3,5,7,10,20,30)){
+    if(file.exists(paste("./classificador_vol_america/vect/clumped/global_clmp_",ikm,"km.csv"))){
+      vects <- readOGR(paste("./classificador_vol_america/vect/clumped/global_clmp_",ikm,"km.shp", sep=""))
+      vects_data <- read.csv(paste("./classificador_vol_america/vect/clumped/global_clmp_",ikm,"km.csv"))
+      vects <- merge(vects,vects_data,by="fid")
+      next()
     }
-    rm(m)
-    rm(quads_ori)
-    vects_ori <- vects[!(is.na(vects$quad_ori))&vects$quad_ori==ori,]
-    vects_ori_list <- split(vects_ori, vects_ori$quad_id)
-    rm(vects_ori)
-    vects_rest <- vects[is.na(vects$quad_ori)|vects$quad_ori!=ori,]
-    rm(vects)
-    rast <- raster("./classificador_vol_america/rasters/all/global.tif")
-    gc()
     
-    #lapply(vects_ori_list, function(x){print(nrow(x))})
+    if(ikm==1){
+      quads <- reproject_EPSG_4258_vect(get_quad_vect())
+    }else if(ikm==2){
+      quads <- reproject_EPSG_4258_vect(get_quad_vect_2km())
+    }else if(ikm==3){
+      quads <- reproject_EPSG_4258_vect(get_quad_vect_3km())
+    }else if(ikm==5){
+      quads <- reproject_EPSG_4258_vect(get_quad_vect_5km())
+    }else if(ikm==7){
+      quads <- reproject_EPSG_4258_vect(get_quad_vect_7km())
+    }else if(ikm==10){
+      quads <- reproject_EPSG_4258_vect(get_quad_vect_10km())
+    }else if(ikm==20){
+      quads <- reproject_EPSG_4258_vect(get_quad_vect_20km())
+    }else if(ikm==30){
+      quads <- reproject_EPSG_4258_vect(get_quad_vect_30km())
+    }
     
-    print("cl")
-    cl <- makeCluster(12, outfile="log_clump_global.txt")
-    clusterExport(cl, list("clump_vector"))
-    clusterEvalQ(cl, list(library(maptools), library(rgeos), library(stringr), library(terra), library(raster), library(exactextractr)))
-    #vects_ori_list <- lapply(vects_ori_list, clump_vector, rast, 200)
-    vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, rast, 100)
-    stopCluster(cl)
-    vects_ori <- do.call(rbind, vects_ori_list)
-    vects_ori <- vects_ori[,c("fid", "quad_id", "quad_ori", "npl", "pldn", "plmaxare")]
-    rm(vects_ori_list)
-    vects <- rbind(vects_rest, vects_ori)
-    rm(vects_ori)
-    rm(cl)
-    gc()
-    writeOGR(vects, "./classificador_vol_america/vect/clumped", paste("global_clmp_1km_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
+    print(paste(ikm,"km"),sep="")
+    for(i in 1:length(unique(quads$ori))){
+      print(i)
+      ori <- unique(quads$ori)[i]
+      quads_ori <- quads[quads$ori==ori,]
+      m <- gIntersects(vects, quads_ori, byid=T)
+      for(ii in 1:nrow(m)){
+        #print(ii)
+        ori <- quads_ori[ii,]$ori
+        id <- quads_ori[ii,]$id
+        v <- which(m[ii,]==T)
+        vects[v,"quad_ori"] <- ori
+        vects[v,"quad_id"] <- id
+      }
+      rm(m)
+      rm(quads_ori)
+      vects_ori <- vects[!(is.na(vects$quad_ori))&vects$quad_ori==ori,]
+      vects_ori_list <- split(vects_ori, vects_ori$quad_id)
+      rm(vects_ori)
+      vects_rest <- vects[is.na(vects$quad_ori)|vects$quad_ori!=ori,]
+      rm(vects)
+      rast <- raster("./classificador_vol_america/rasters/all/global.tif")
+      gc()
+      
+      #lapply(vects_ori_list, function(x){print(nrow(x))})
+      
+      print("cl")
+      cl <- makeCluster(12, outfile="log_clump_global.txt")
+      clusterExport(cl, list("clump_vector"))
+      clusterEvalQ(cl, list(library(maptools), library(rgeos), library(stringr), library(terra), library(raster), library(exactextractr)))
+      #vects_ori_list <- lapply(vects_ori_list, clump_vector, rast, 200)
+      vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, rast, 100*ikm)
+      stopCluster(cl)
+      vects_ori <- do.call(rbind, vects_ori_list)
+      vects_ori <- vects_ori[,c("fid", "quad_id", "quad_ori", "npl", "pldn", "plmaxare")]
+      rm(vects_ori_list)
+      vects <- rbind(vects_rest, vects_ori)
+      rm(vects_ori)
+      rm(cl)
+      gc()
+      # writeOGR(vects, "./classificador_vol_america/vect/clumped", paste("global_clmp_1km_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
+    }
+    writeOGR(vects[,"fid"], "./classificador_vol_america/vect/clumped", paste("global_clmp_",ikm,"km", sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
+    save.csv(as.data.frame(vects),paste("./classificador_vol_america/vect/clumped/global_clmp_",ikm,"km.csv"))  
   }
   
-  quads <- reproject_EPSG_4258_vect(get_quad_vect_3km())
-  print("3km")
-  vects$quad_id <- NA
-  vects$quad_ori <- NA
-  for(i in 1:length(unique(quads$ori))){
-    print(i)
-    ori <- unique(quads$ori)[i]
-    quads_ori <- quads[quads$ori==ori,]
-    m <- gIntersects(vects, quads_ori, byid=T)
-    for(ii in 1:nrow(m)){
-      ori <- quads_ori[ii,]$ori
-      id <- quads_ori[ii,]$id
-      v <- which(m[ii,]==T)
-      vects[v,"quad_ori"] <- ori
-      vects[v,"quad_id"] <- id
-    }
-    rm(m)
-    rm(quads_ori)
-    vects_ori <- vects[!(is.na(vects$quad_ori))&vects$quad_ori==ori,]
-    vects_ori_list <- split(vects_ori, vects_ori$quad_id)
-    rm(vects_ori)
-    vects_rest <- vects[is.na(vects$quad_ori)|vects$quad_ori!=ori,]
-    rm(vects)
-    rast <- raster("./classificador_vol_america/rasters/all/global.tif")
-    gc()
-    
-    #lapply(vects_ori_list, function(x){print(nrow(x))})
-    
-    print("cl")
-    cl <- makeCluster(12, outfile="log_clump_global.txt")
-    clusterExport(cl, list("clump_vector"))
-    clusterEvalQ(cl, list(library(maptools), library(rgeos), library(stringr), library(terra), library(raster), library(exactextractr)))
-    vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, rast, 300)
-    stopCluster(cl)
-    vects_ori <- do.call(rbind, vects_ori_list)
-    vects_ori <- vects_ori[,c("fid", "quad_id", "quad_ori", "npl", "pldn", "plmaxare")]
-    rm(vects_ori_list)
-    vects <- rbind(vects_rest, vects_ori)
-    rm(vects_ori)
-    rm(cl)
-    gc()
-    writeOGR(vects, "./classificador_vol_america/vect/clumped", paste("global_clmp_3km_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
-  }
   
-  quads <- reproject_EPSG_4258_vect(get_quad_vect_5km())
-  print("5km")
-  vects$quad_id <- NA
-  vects$quad_ori <- NA
-  for(i in 1:length(unique(quads$ori))){
-    print(i)
-    ori <- unique(quads$ori)[i]
-    quads_ori <- quads[quads$ori==ori,]
-    m <- gIntersects(vects, quads_ori, byid=T)
-    for(ii in 1:nrow(m)){
-      ori <- quads_ori[ii,]$ori
-      id <- quads_ori[ii,]$id
-      v <- which(m[ii,]==T)
-      vects[v,"quad_ori"] <- ori
-      vects[v,"quad_id"] <- id
-    }
-    rm(m)
-    rm(quads_ori)
-    vects_ori <- vects[!(is.na(vects$quad_ori))&vects$quad_ori==ori,]
-    vects_ori_list <- split(vects_ori, vects_ori$quad_id)
-    rm(vects_ori)
-    vects_rest <- vects[is.na(vects$quad_ori)|vects$quad_ori!=ori,]
-    rm(vects)
-    rast <- raster("./classificador_vol_america/rasters/all/global.tif")
-    gc()
-    
-    #lapply(vects_ori_list, function(x){print(nrow(x))})
-    
-    print("cl")
-    cl <- makeCluster(12, outfile="log_clump_global.txt")
-    clusterExport(cl, list("clump_vector"))
-    clusterEvalQ(cl, list(library(maptools), library(rgeos), library(stringr), library(terra), library(raster), library(exactextractr)))
-    vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, rast, 500)
-    stopCluster(cl)
-    vects_ori <- do.call(rbind, vects_ori_list)
-    vects_ori <- vects_ori[,c("fid", "quad_id", "quad_ori", "npl", "pldn", "plmaxare")]
-    rm(vects_ori_list)
-    vects <- rbind(vects_rest, vects_ori)
-    rm(vects_ori)
-    rm(cl)
-    gc()
-    writeOGR(vects, "./classificador_vol_america/vect/clumped", paste("global_clmp_5km_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
-  }
-  
-  quads <- reproject_EPSG_4258_vect(get_quad_vect_10km())
-  print("10km")
-  vects$quad_id <- NA
-  vects$quad_ori <- NA
-  for(i in 1:length(unique(quads$ori))){
-    print(i)
-    ori <- unique(quads$ori)[i]
-    quads_ori <- quads[quads$ori==ori,]
-    m <- gIntersects(vects, quads_ori, byid=T)
-    for(ii in 1:nrow(m)){
-      ori <- quads_ori[ii,]$ori
-      id <- quads_ori[ii,]$id
-      v <- which(m[ii,]==T)
-      vects[v,"quad_ori"] <- ori
-      vects[v,"quad_id"] <- id
-    }
-    rm(m)
-    rm(quads_ori)
-    vects_ori <- vects[!(is.na(vects$quad_ori))&vects$quad_ori==ori,]
-    vects_ori_list <- split(vects_ori, vects_ori$quad_id)
-    rm(vects_ori)
-    vects_rest <- vects[is.na(vects$quad_ori)|vects$quad_ori!=ori,]
-    rm(vects)
-    rast <- raster("./classificador_vol_america/rasters/all/global.tif")
-    gc()
-    
-    #lapply(vects_ori_list, function(x){print(nrow(x))})
-    
-    print("cl")
-    cl <- makeCluster(12, outfile="log_clump_global.txt")
-    clusterExport(cl, list("clump_vector"))
-    clusterEvalQ(cl, list(library(maptools), library(rgeos), library(stringr), library(terra), library(raster), library(exactextractr)))
-    vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, rast, 1000)
-    stopCluster(cl)
-    vects_ori <- do.call(rbind, vects_ori_list)
-    vects_ori <- vects_ori[,c("fid", "quad_id", "quad_ori", "npl", "pldn", "plmaxare")]
-    rm(vects_ori_list)
-    vects <- rbind(vects_rest, vects_ori)
-    rm(vects_ori)
-    rm(cl)
-    gc()
-    writeOGR(vects, "./classificador_vol_america/vect/clumped", paste("global_clmp_10km_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
-  }
-  
-  quads <- reproject_EPSG_4258_vect(get_quad_vect_20km())
-  print("20km")
-  vects$quad_id <- NA
-  vects$quad_ori <- NA
-  for(i in 1:length(unique(quads$ori))){
-    print(i)
-    ori <- unique(quads$ori)[i]
-    quads_ori <- quads[quads$ori==ori,]
-    m <- gIntersects(vects, quads_ori, byid=T)
-    for(ii in 1:nrow(m)){
-      ori <- quads_ori[ii,]$ori
-      id <- quads_ori[ii,]$id
-      v <- which(m[ii,]==T)
-      vects[v,"quad_ori"] <- ori
-      vects[v,"quad_id"] <- id
-    }
-    rm(m)
-    rm(quads_ori)
-    vects_ori <- vects[!(is.na(vects$quad_ori))&vects$quad_ori==ori,]
-    vects_ori_list <- split(vects_ori, vects_ori$quad_id)
-    rm(vects_ori)
-    vects_rest <- vects[is.na(vects$quad_ori)|vects$quad_ori!=ori,]
-    rm(vects)
-    rast <- raster("./classificador_vol_america/rasters/all/global.tif")
-    gc()
-    
-    #lapply(vects_ori_list, function(x){print(nrow(x))})
-    
-    print("cl")
-    cl <- makeCluster(12, outfile="log_clump_global.txt")
-    clusterExport(cl, list("clump_vector"))
-    clusterEvalQ(cl, list(library(maptools), library(rgeos), library(stringr), library(terra), library(raster), library(exactextractr)))
-    vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, rast, 2000)
-    stopCluster(cl)
-    vects_ori <- do.call(rbind, vects_ori_list)
-    vects_ori <- vects_ori[,c("fid", "quad_id", "quad_ori", "npl", "pldn", "plmaxare")]
-    rm(vects_ori_list)
-    vects <- rbind(vects_rest, vects_ori)
-    rm(vects_ori)
-    rm(cl)
-    gc()
-    writeOGR(vects, "./classificador_vol_america/vect/clumped", paste("global_clmp_20km_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
-  }
+  # quads <- reproject_EPSG_4258_vect(get_quad_vect())
+  # print("1km")
+  # for(i in 1:length(unique(quads$ori))){
+  #   print(i)
+  #   ori <- unique(quads$ori)[i]
+  #   quads_ori <- quads[quads$ori==ori,]
+  #   m <- gIntersects(vects, quads_ori, byid=T)
+  #   for(ii in 1:nrow(m)){
+  #     #print(ii)
+  #     ori <- quads_ori[ii,]$ori
+  #     id <- quads_ori[ii,]$id
+  #     v <- which(m[ii,]==T)
+  #     vects[v,"quad_ori"] <- ori
+  #     vects[v,"quad_id"] <- id
+  #   }
+  #   rm(m)
+  #   rm(quads_ori)
+  #   vects_ori <- vects[!(is.na(vects$quad_ori))&vects$quad_ori==ori,]
+  #   vects_ori_list <- split(vects_ori, vects_ori$quad_id)
+  #   rm(vects_ori)
+  #   vects_rest <- vects[is.na(vects$quad_ori)|vects$quad_ori!=ori,]
+  #   rm(vects)
+  #   rast <- raster("./classificador_vol_america/rasters/all/global.tif")
+  #   gc()
+  #   
+  #   #lapply(vects_ori_list, function(x){print(nrow(x))})
+  #   
+  #   print("cl")
+  #   cl <- makeCluster(12, outfile="log_clump_global.txt")
+  #   clusterExport(cl, list("clump_vector"))
+  #   clusterEvalQ(cl, list(library(maptools), library(rgeos), library(stringr), library(terra), library(raster), library(exactextractr)))
+  #   #vects_ori_list <- lapply(vects_ori_list, clump_vector, rast, 200)
+  #   vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, rast, 100)
+  #   stopCluster(cl)
+  #   vects_ori <- do.call(rbind, vects_ori_list)
+  #   vects_ori <- vects_ori[,c("fid", "quad_id", "quad_ori", "npl", "pldn", "plmaxare")]
+  #   rm(vects_ori_list)
+  #   vects <- rbind(vects_rest, vects_ori)
+  #   rm(vects_ori)
+  #   rm(cl)
+  #   gc()
+  #   writeOGR(vects, "./classificador_vol_america/vect/clumped", paste("global_clmp_1km_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
+  # }
+  # 
+  # quads <- reproject_EPSG_4258_vect(get_quad_vect_3km())
+  # print("3km")
+  # vects$quad_id <- NA
+  # vects$quad_ori <- NA
+  # for(i in 1:length(unique(quads$ori))){
+  #   print(i)
+  #   ori <- unique(quads$ori)[i]
+  #   quads_ori <- quads[quads$ori==ori,]
+  #   m <- gIntersects(vects, quads_ori, byid=T)
+  #   for(ii in 1:nrow(m)){
+  #     ori <- quads_ori[ii,]$ori
+  #     id <- quads_ori[ii,]$id
+  #     v <- which(m[ii,]==T)
+  #     vects[v,"quad_ori"] <- ori
+  #     vects[v,"quad_id"] <- id
+  #   }
+  #   rm(m)
+  #   rm(quads_ori)
+  #   vects_ori <- vects[!(is.na(vects$quad_ori))&vects$quad_ori==ori,]
+  #   vects_ori_list <- split(vects_ori, vects_ori$quad_id)
+  #   rm(vects_ori)
+  #   vects_rest <- vects[is.na(vects$quad_ori)|vects$quad_ori!=ori,]
+  #   rm(vects)
+  #   rast <- raster("./classificador_vol_america/rasters/all/global.tif")
+  #   gc()
+  #   
+  #   #lapply(vects_ori_list, function(x){print(nrow(x))})
+  #   
+  #   print("cl")
+  #   cl <- makeCluster(12, outfile="log_clump_global.txt")
+  #   clusterExport(cl, list("clump_vector"))
+  #   clusterEvalQ(cl, list(library(maptools), library(rgeos), library(stringr), library(terra), library(raster), library(exactextractr)))
+  #   vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, rast, 300)
+  #   stopCluster(cl)
+  #   vects_ori <- do.call(rbind, vects_ori_list)
+  #   vects_ori <- vects_ori[,c("fid", "quad_id", "quad_ori", "npl", "pldn", "plmaxare")]
+  #   rm(vects_ori_list)
+  #   vects <- rbind(vects_rest, vects_ori)
+  #   rm(vects_ori)
+  #   rm(cl)
+  #   gc()
+  #   writeOGR(vects, "./classificador_vol_america/vect/clumped", paste("global_clmp_3km_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
+  # }
+  # 
+  # quads <- reproject_EPSG_4258_vect(get_quad_vect_5km())
+  # print("5km")
+  # vects$quad_id <- NA
+  # vects$quad_ori <- NA
+  # for(i in 1:length(unique(quads$ori))){
+  #   print(i)
+  #   ori <- unique(quads$ori)[i]
+  #   quads_ori <- quads[quads$ori==ori,]
+  #   m <- gIntersects(vects, quads_ori, byid=T)
+  #   for(ii in 1:nrow(m)){
+  #     ori <- quads_ori[ii,]$ori
+  #     id <- quads_ori[ii,]$id
+  #     v <- which(m[ii,]==T)
+  #     vects[v,"quad_ori"] <- ori
+  #     vects[v,"quad_id"] <- id
+  #   }
+  #   rm(m)
+  #   rm(quads_ori)
+  #   vects_ori <- vects[!(is.na(vects$quad_ori))&vects$quad_ori==ori,]
+  #   vects_ori_list <- split(vects_ori, vects_ori$quad_id)
+  #   rm(vects_ori)
+  #   vects_rest <- vects[is.na(vects$quad_ori)|vects$quad_ori!=ori,]
+  #   rm(vects)
+  #   rast <- raster("./classificador_vol_america/rasters/all/global.tif")
+  #   gc()
+  #   
+  #   #lapply(vects_ori_list, function(x){print(nrow(x))})
+  #   
+  #   print("cl")
+  #   cl <- makeCluster(12, outfile="log_clump_global.txt")
+  #   clusterExport(cl, list("clump_vector"))
+  #   clusterEvalQ(cl, list(library(maptools), library(rgeos), library(stringr), library(terra), library(raster), library(exactextractr)))
+  #   vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, rast, 500)
+  #   stopCluster(cl)
+  #   vects_ori <- do.call(rbind, vects_ori_list)
+  #   vects_ori <- vects_ori[,c("fid", "quad_id", "quad_ori", "npl", "pldn", "plmaxare")]
+  #   rm(vects_ori_list)
+  #   vects <- rbind(vects_rest, vects_ori)
+  #   rm(vects_ori)
+  #   rm(cl)
+  #   gc()
+  #   writeOGR(vects, "./classificador_vol_america/vect/clumped", paste("global_clmp_5km_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
+  # }
+  # 
+  # quads <- reproject_EPSG_4258_vect(get_quad_vect_10km())
+  # print("10km")
+  # vects$quad_id <- NA
+  # vects$quad_ori <- NA
+  # for(i in 1:length(unique(quads$ori))){
+  #   print(i)
+  #   ori <- unique(quads$ori)[i]
+  #   quads_ori <- quads[quads$ori==ori,]
+  #   m <- gIntersects(vects, quads_ori, byid=T)
+  #   for(ii in 1:nrow(m)){
+  #     ori <- quads_ori[ii,]$ori
+  #     id <- quads_ori[ii,]$id
+  #     v <- which(m[ii,]==T)
+  #     vects[v,"quad_ori"] <- ori
+  #     vects[v,"quad_id"] <- id
+  #   }
+  #   rm(m)
+  #   rm(quads_ori)
+  #   vects_ori <- vects[!(is.na(vects$quad_ori))&vects$quad_ori==ori,]
+  #   vects_ori_list <- split(vects_ori, vects_ori$quad_id)
+  #   rm(vects_ori)
+  #   vects_rest <- vects[is.na(vects$quad_ori)|vects$quad_ori!=ori,]
+  #   rm(vects)
+  #   rast <- raster("./classificador_vol_america/rasters/all/global.tif")
+  #   gc()
+  #   
+  #   #lapply(vects_ori_list, function(x){print(nrow(x))})
+  #   
+  #   print("cl")
+  #   cl <- makeCluster(12, outfile="log_clump_global.txt")
+  #   clusterExport(cl, list("clump_vector"))
+  #   clusterEvalQ(cl, list(library(maptools), library(rgeos), library(stringr), library(terra), library(raster), library(exactextractr)))
+  #   vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, rast, 1000)
+  #   stopCluster(cl)
+  #   vects_ori <- do.call(rbind, vects_ori_list)
+  #   vects_ori <- vects_ori[,c("fid", "quad_id", "quad_ori", "npl", "pldn", "plmaxare")]
+  #   rm(vects_ori_list)
+  #   vects <- rbind(vects_rest, vects_ori)
+  #   rm(vects_ori)
+  #   rm(cl)
+  #   gc()
+  #   writeOGR(vects, "./classificador_vol_america/vect/clumped", paste("global_clmp_10km_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
+  # }
+  # 
+  # quads <- reproject_EPSG_4258_vect(get_quad_vect_20km())
+  # print("20km")
+  # vects$quad_id <- NA
+  # vects$quad_ori <- NA
+  # for(i in 1:length(unique(quads$ori))){
+  #   print(i)
+  #   ori <- unique(quads$ori)[i]
+  #   quads_ori <- quads[quads$ori==ori,]
+  #   m <- gIntersects(vects, quads_ori, byid=T)
+  #   for(ii in 1:nrow(m)){
+  #     ori <- quads_ori[ii,]$ori
+  #     id <- quads_ori[ii,]$id
+  #     v <- which(m[ii,]==T)
+  #     vects[v,"quad_ori"] <- ori
+  #     vects[v,"quad_id"] <- id
+  #   }
+  #   rm(m)
+  #   rm(quads_ori)
+  #   vects_ori <- vects[!(is.na(vects$quad_ori))&vects$quad_ori==ori,]
+  #   vects_ori_list <- split(vects_ori, vects_ori$quad_id)
+  #   rm(vects_ori)
+  #   vects_rest <- vects[is.na(vects$quad_ori)|vects$quad_ori!=ori,]
+  #   rm(vects)
+  #   rast <- raster("./classificador_vol_america/rasters/all/global.tif")
+  #   gc()
+  #   
+  #   #lapply(vects_ori_list, function(x){print(nrow(x))})
+  #   
+  #   print("cl")
+  #   cl <- makeCluster(12, outfile="log_clump_global.txt")
+  #   clusterExport(cl, list("clump_vector"))
+  #   clusterEvalQ(cl, list(library(maptools), library(rgeos), library(stringr), library(terra), library(raster), library(exactextractr)))
+  #   vects_ori_list <- parLapplyLB(cl, vects_ori_list, clump_vector, rast, 2000)
+  #   stopCluster(cl)
+  #   vects_ori <- do.call(rbind, vects_ori_list)
+  #   vects_ori <- vects_ori[,c("fid", "quad_id", "quad_ori", "npl", "pldn", "plmaxare")]
+  #   rm(vects_ori_list)
+  #   vects <- rbind(vects_rest, vects_ori)
+  #   rm(vects_ori)
+  #   rm(cl)
+  #   gc()
+  #   writeOGR(vects, "./classificador_vol_america/vect/clumped", paste("global_clmp_20km_",i,"_",ori, sep=""), driver = "ESRI Shapefile", overwrite_layer = TRUE)
+  # }
   #afegir 2km, 7km, 30km i fer una funció a part on li passis el n.
   
   vects <- clump_vector(vects, rast)
@@ -836,16 +909,20 @@ clump_vector_combine <- function(){
   vects <- vects[,c("fid", "npl", "pldn", "plmaxare")]
   
   plare <- str_split(vects$plare, ",")
-  vects$plare_mn <- sapply(lapply(plare, as.numeric), mean)
-  vects$plare_mdn <- sapply(lapply(plare, as.numeric), median)
-  vects$plare_sd<- sapply(lapply(plare, as.numeric), sd)
-  vects$plare_p10 <- sapply(lapply(plare, as.numeric), quantile, 0.10)
-  vects$plare_p25 <- sapply(lapply(plare, as.numeric), quantile, 0.25)
-  vects$plare_p75 <- sapply(lapply(plare, as.numeric), quantile, 0.75)
-  vects$plare_p90 <- sapply(lapply(plare, as.numeric), quantile, 0.90)
+  vects$plare_mn <- sapply(lapply(plare, as.numeric), mean, na.rm=T)
+  vects$plare_max <- sapply(lapply(plare, as.numeric), max, na.rm=T)
+  vects$plare_min <- sapply(lapply(plare, as.numeric), min, na.rm=T)
+  vects$plare_mdn <- sapply(lapply(plare, as.numeric), median, na.rm=T)
+  vects$plare_sd<- sapply(lapply(plare, as.numeric), sd, na.rm=T)
+  vects$plare_cv<- vects$plare_sd/vects$plare_mn
+  vects$plare_maxdif<- vects$max-vects$min
+  vects$plare_p10 <- sapply(lapply(plare, as.numeric), quantile, 0.10, na.rm=T)
+  vects$plare_p25 <- sapply(lapply(plare, as.numeric), quantile, 0.25, na.rm=T)
+  vects$plare_p75 <- sapply(lapply(plare, as.numeric), quantile, 0.75, na.rm=T)
+  vects$plare_p90 <- sapply(lapply(plare, as.numeric), quantile, 0.90, na.rm=T)
   vects$plare<-NULL
   
-  # abans de guardar-lo, calcular: sd, mitjana, mediana, primer quartil, tercer quartil, max i min de les plare
+  # abans de guardar-lo, calcular: sd, cv, mitjana, mediana, primer quartil, tercer quartil, max i min de les plare
   writeOGR(vects, "./classificador_vol_america/vect/clumped", "global_clmp", driver = "ESRI Shapefile", overwrite_layer = TRUE)
 }
 
