@@ -134,9 +134,13 @@ get_quad_vect_30km <- function(){
 }
 
 read_quad_ids_exported <- function(){
-  tryCatch(read.table("./classificador_vol_america/rasters/ids_exported.txt")[,1],
-           error = function(e)
-             return(NULL))
+  # tryCatch(read.table("./classificador_vol_america/rasters/ids_exported.txt")[,1],
+  #          error = function(e)
+  #            return(NULL))
+  files <- list.files("./classificador_vol_america/rasters/all", pattern = "\\.tif$")
+  files <- sub(".tif","",files)
+  as.numeric(files)
+  
 }
 
 

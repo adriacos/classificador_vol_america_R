@@ -133,24 +133,24 @@ save_ortofotos_to_rasters <- function(n=NULL){
   
   ids <- read_quad_ids_not_exported(notin=append(corrupted, smoothen))
   
-  all <- read_quad_ids()
-  
-  if(dir.exists("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula")){
-    ids <- ids[ids %in% all[round((length(all)/4)*3):length(all)]]
-    ids <- rev(ids)
-  }else if(dir.exists("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula")){
-    ids <- ids[ids %in% all[1:(length(all)/2)-1]]
-  }
-  # else if(dir.exists("./classificador_vol_america/data/Quadricula")){
-  #   ids <- ids[ids %in% all[(length(all)/2):(round((length(all)/4)*3)-1)]]
+  # all <- read_quad_ids()
+  # 
+  # if(dir.exists("C:/Users/acosd/Desktop/CREAF/Mapes/Quadricula")){
+  #   ids <- ids[ids %in% all[round((length(all)/4)*3):length(all)]]
   #   ids <- rev(ids)
+  # }else if(dir.exists("C:/Users/a.cos/Documents/Tesi/DADES/Quadricula")){
+  #   ids <- ids[ids %in% all[1:(length(all)/2)-1]]
   # }
+  # # else if(dir.exists("./classificador_vol_america/data/Quadricula")){
+  #   # ids <- ids[ids %in% all[(length(all)/2):(round((length(all)/4)*3)-1)]]
+  #   # ids <- rev(ids)
+  # # }
   
-  if(!is.null(n)){
-    ids <- ids[1:n]
-  }else{
-    ids <- ids[1:50]
-  }
+  # if(!is.null(n)){
+  #   ids <- ids[1:n]
+  # }else{
+  #   ids <- ids[1:50]
+  # }
   ids <- sort(ids)
   
   rm(done)

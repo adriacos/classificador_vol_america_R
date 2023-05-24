@@ -7,20 +7,137 @@ source("./classificador_vol_america/scripts/read_data.R")
 # library(tidyverse)
 library(terra)
 
+restore <- function(){
+  rasters <- read_rasters_all()
+  merged <- rasters[grepl("_", names(rasters))]
+  rasters <- rasters[names(rasters)!=names(merged)]          
+  ids_done <- unlist(str_split(names(merged),"_"))  
+  rasters <- rasters[!names(rasters)%in%ids_done]
+  
+}
+
+read_rasters_all <- function(){
+  # dir <- "./classificador_vol_america/rasters/all"
+  dir <- "./classificador_vol_america/rasters/pnoa"
+  files <- paste(dir, list.files(dir, pattern = "\\.tif$"), sep="/")
+  ids <- sapply(files,function(file){
+    file <- sub(dir,"",file)
+    file <- sub("/","",file)
+    # file <- sub("","",file)
+    file <- sub("\\.tif$","",file)
+    # as.numeric(file)
+    file
+  })
+  files <- files[order(ids)]
+  ids <- sapply(files,function(file){
+    file <- sub(dir,"",file)
+    file <- sub("/","",file)
+    # file <- sub("","",file)
+    file <- sub("\\.tif$","",file)
+    # as.numeric(file)
+    file
+  })
+  rasters <- lapply(files, raster)
+  names(rasters) <- ids
+  names(ids) <- NULL
+  rasters
+  # rasters <- rasters[names(rasters)%in%1:3000]
+} 
+
+merge_rasters_1by1 <- function(rasters){
+  merged <- rasters[[1]]
+  ids <- names(rasters[1])
+  # rasts <- rasters[-1]
+  for(i in 1:length(rasters)){
+    print(i)
+    r2 <- rasters[[i]]
+    ids <- append(ids, names(rasters[i]))
+    newname <- paste(paste(ids, collapse="_"),".tif",sep="")
+    print(newname)
+    print(oldname)
+    # if(i==2){
+    #   oldname <- newname
+    # }
+    template <- projectRaster(from = r2, to= merged, alignOnly=TRUE)
+    print("template")
+    aligned <- projectRaster(from=r2, to=template)
+    alignedlocation <- aligned@file@name
+    print("aligned")
+    rm(template)
+    gc()
+    oldlocation <- merged@file@name
+    merged <- merge(merged, aligned, paste("./classificador_vol_america/rasters/pnoa/",newname,sep=""))
+    newlocation <- merged@file@name
+    if(oldlocation!=newlocation){
+      unlink(oldlocation)
+      unlink(sub(".grd",".gri",oldlocation))
+      print("deleted old temp file")
+    }
+    print("merged")
+    unlink(alignedlocation)
+    unlink(sub(".grd",".gri",alignedlocation))
+    rm(aligned)
+   
+    gc()
+    if(i%%2==0){
+      writeRaster(merged, paste("./classificador_vol_america/rasters/pnoa/",newname,sep=""),overwrite=T)
+      print("saved")
+      # rm(merged)
+      unlink(paste("./classificador_vol_america/rasters/pnoa/",oldname,sep=""))
+      print("deleted")
+      oldname <- newname
+      gc()
+    }
+   
+
+  }
+}
+
+
 merge_rasters <- function(rasters){
   r1 <- rasters[[1]]
   rasts <- rasters[-1]
   templates <- lapply(rasts, function(x) projectRaster(from = x, to= r1, alignOnly=TRUE))
   aligned <- mapply(function(x, y) projectRaster(from=x, to=y), rasts, templates)
-  merged <- r1
-  #dividir-ho en varies parts (tantes com cores) i fer cadascuna en paral·lel i després ajuntar-ho
-  for(i in 1:length(rasts)){
-    print(i)
-    merged <- merge(merged, aligned[[i]])
+  rasts <- append(r1,aligned)
+  names(rasts) <- names(rasters)
+  
+  rm(templates)
+  rm(aligned)
+  rm(r1)
+  gc()
+  
+  
+  while(length(rasts)>3){
+    rasts <- split(rasts, cut(seq_along(rasts), round(length(rasts)/3), labels = FALSE))
+    rasts <- lapply(rasts, function(rr){
+      merged <- rr[[1]]
+      r2 <- rr[-1]
+      for(i in 1:length(r2)){
+        print(paste(i, names(rr[i])))
+        merged <- merge(merged, r2[[i]])
+      }
+      merged
+    })
   }
-  #writeRaster(merged, "./classificador_vol_america/rasters/all/global.tif")
+  merged <- rasts[[1]]
+  r2 <- rasts[-1]
+  for(i in 1:length(r2)){
+    print(paste(i, names(rasts[i])))
+    merged <- merge(merged, r2[[i]])
+  }
+  rm(rasts)
+  gc()
+  #
+  # #dividir-ho en varies parts (tantes com cores) i fer cadascuna en paral·lel i després ajuntar-ho
+  # for(i in 1:length(rasts)){
+  #   print(i)
+  #   merged <- merge(merged, aligned[[i]])
+  # }
+  writeRaster(merged, "./classificador_vol_america/rasters/global_1_300.tif")
   merged
 }
+
 
 merge_clumped <- function(){
   merge_vectors()

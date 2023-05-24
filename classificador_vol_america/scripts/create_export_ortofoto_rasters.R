@@ -20,7 +20,7 @@ create_export_ortofoto_raster <- function(id, lat, lng){
     save_id_corrupted(id)
     return(NULL)
   }
-  
+
   rast <- project_EPSG_4258_rast(rast)
   #rast <- reproject_EPSG_25831_rast(rast)
   

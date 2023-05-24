@@ -3,6 +3,7 @@ library(raster)
 library(SpaDES)
 library(rgdal)
 library(parallel)
+library(supercells)
 
 
 smoothen_raster <- function(id){
@@ -10,49 +11,90 @@ smoothen_raster <- function(id){
 
   dir <- paste("./classificador_vol_america/rasters/smoothen/",id, sep="")
   
-  i_st <- 1
-  rast <- raster(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
-
-  if(dir.exists(dir)){
-    list <- list.files(dir, pattern = "\\.tif$")
-    if(length(list)>0){
-      i_st <-length(list) + 1 
-      rast <- raster(paste(dir, list[length(list)],sep="/"))  
-    }
-  }else{
-    dir.create(dir)
-  }
+  # i_st <- 1
+  # rast <- raster(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
+  rast <- raster(paste("./classificador_vol_america/rasters/pnoa/", "BCN_1km", ".tif", sep=""))
+  # max_val <- max(values(rast))
+  max_val <- 255
+  # values(rast) <- 10*values(rast)/max(values(rast))
+  limit <- st_read("./classificador_vol_america/rasters/pnoa/LIMADM_PROVINCIA_BCN_1km.gpkg")
+  grid <- st_as_sf(st_make_grid(limit,n=c(30,30)))#cellsize = c(3000,3000)))
+  grid$id <- 1:nrow(grid)
+  grid$ori <- 0
+  grid[grid$id%%4==0,"ori"] <- 0
+  grid[grid$id%%4==1,"ori"] <- 1
+  grid[grid$id%%4==2,"ori"] <- 2
+  grid[grid$id%%4==3,"ori"] <- 3
+  grid <- st_intersection(grid, limit)
+  st_write(grid, "./classificador_vol_america/rasters/pnoa/LIMADM_PROVINCIA_BCN_1km_grid_3x3km.gpkg",overwrite=T)
+  
+  # if(dir.exists(dir)){
+  #   list <- list.files(dir, pattern = "\\.tif$")
+  #   if(length(list)>0){
+  #     i_st <-length(list) + 1 
+  #     rast <- raster(paste(dir, list[length(list)],sep="/"))  
+  #   }
+  # }else{
+  #   dir.create(dir)
+  # }
  
   n.cores <- detectCores()
-  if(n.cores==12){
-    raster_split <- splitRaster(rast, 6,4, buffer=c(2,2))
-  }else if (n.cores==20){
-    raster_split <- splitRaster(rast, 5,4, buffer=c(2,2))
-  }else{
-    raster_split <- splitRaster(rast, 5,5, buffer=c(2,2))
-  }
-  
+  n.cores <- 6
+  # if(n.cores==12){
+  #   raster_split <- splitRaster(rast, 6,4, buffer=c(2,2))
+  # }else if (n.cores==20){
+  #   n.cores <- 12
+    # raster_split <- splitRaster(rast, 30,30, buffer=c(10,10))
+  raster_split <- lapply(grid$id,function(id, grid, rast){
+    print(grid[grid$id==id,]$id)
+    buf <- st_buffer(grid[grid$id==id,], 10)
+    crop <- mask(crop(rast,buf),buf)
+    writeRaster(crop,paste("./classificador_vol_america/rasters/pnoa/split/",id,".tif",sep=""))
+  },grid,rast)
+    # raster_split <- splitRaster(rast, 5,4, buffer=c(2,2))
+  # }else{
+  #   raster_split <- splitRaster(rast, 5,5, buffer=c(2,2))
+  # }
+  # raster_split.locations <- sapply(raster_split,function(x){x@file@name})
+  # for(i in 1:length(raster_split)){
+  #   writeRaster(raster_split[[i]],paste("./classificador_vol_america/rasters/pnoa/split/supercells/",i,".tif"))
+  # }
 
+  # raster_split <- lapply(paste("./classificador_vol_america/rasters/pnoa/split/",list.files("./classificador_vol_america/rasters/pnoa/split/",pattern="\\.tif$"),sep=""),raster)
+  names(raster_split) <- lapply(raster_split,function(r){
+    sub(" ","",sub(" ","",sub(".tif","",basename(r@file@name))))
+  })
+  ids_done <- sub(".tif","",list.files("./classificador_vol_america/rasters/pnoa/split/supercells",pattern="\\.tif$"))
+  raster_split <- raster_split[!names(raster_split)%in%ids_done]
   
+ 
   
-  clust <- makeCluster(n.cores)
-  clusterExport(clust, c("raster_split","smoothen_raster_"), envir = environment())
-  clusterEvalQ(clust, library(raster))
+  clust <- makeCluster(n.cores,outfile=".supercells.txt")
+  clusterExport(clust, c("raster_split","smoothen_raster_supercells"), envir = environment())
+  clusterEvalQ(clust, list(library(raster),library(supercells),library(terra),library(stars),library(exactextractr)))
   
-  for(i in i_st:12){
-    print(paste("start ", i, Sys.time()))
-    raster_split <- parLapply(clust, raster_split,smoothen_raster_, seed=i)
-    rast <- mergeRaster(raster_split)
-    writeRaster(rast,paste(dir, "/", id, "_smth_", i, ".tif", sep=""), overwrite=TRUE)
-    print(paste("end ", i, Sys.time()))
-  }
-  stopCluster(clust)
+  # for(i in i_st:6){
+    # print(paste("start ", i, Sys.time()))
+    raster_split <- parLapplyLB(clust, raster_split,smoothen_raster_supercells,max_val)
+    stopCluster(clust)
+    
+    # lapply(raster_split,smoothen_raster_supercells)
+    # raster_split <- parLapply(clust, raster_split,smoothen_raster_, seed=i)
+    # rast <- mergeRaster(raster_split)
+    
+    # rast <- mosaic(raster_split,fun=mean)
+    
+    # writeRaster(rast,paste(dir, "/", id, "_smth_", i, ".tif", sep=""), overwrite=TRUE)
+    # print(paste("end ", i, Sys.time()))
+  # }
+  
   rm(clust)
   rm(raster_split)
   rast <- rast*10
   #values(rast) <- round_any(values(rast), 0.5)
   res <- writeRaster(rast,paste("./classificador_vol_america/rasters/smoothen/",id,"_smth.tif", sep=""), overwrite=TRUE)
   # res <- writeRaster(rast,paste("./classificador_vol_america/rasters/smoothen/bkp/",id,"_smth.tif", sep=""), overwrite=TRUE)
+  save_id_smoothen(id)
   if(exists("res")){
     unlink(dir, recursive = TRUE)
     file.remove(paste("./classificador_vol_america/rasters/exported/", id, ".tif", sep=""))
@@ -61,6 +103,102 @@ smoothen_raster <- function(id){
   rm(res)
   rast
 }
+
+merge_rasters_mosaic <- function(rasters){
+  
+  dir <- "./classificador_vol_america/rasters/pnoa/split/supercells/"
+  
+  files_done <- list.files(paste(dir, "temp/",sep=""))
+  ids_done <- sapply(files_done,function(x){
+    string_split(x,"_")[[1]]
+  })
+  # merged <- raster(paste(dir, "temp/",[1],sep=""))
+  ids_todo <- 1:900
+  # ids_done <- 1:40
+  ids_todo <- ids_todo[!ids_todo%in%ids_done]
+  files <- list.files(dir, pattern = "\\.tif$")
+  rasters <- sapply(files,function(f){
+      return(raster(paste(dir,f,sep="")))  
+  })
+  names(rasters) <- sub(" ","",sub(" ","",sub(".tif","",names(rasters))))
+  rasters <- rasters[order(as.numeric(names(rasters)))]
+  rasters <- rasters[as.numeric(names(rasters))%in%ids_todo]
+  
+  # merged <- rasters[[1]]
+  # ids <- 1
+  ids <- ids_done
+  
+  n.cores <- 2
+  rasters_spl <- list(rasters[1:floor(length(rasters)/2)],rasters[ceiling(length(rasters)/2):length(rasters)])
+  cl <- makeCluster(n.cores,outfile="smoothen_raster_merge.txt")
+  clusterExport(cl,list("rasters_spl"))
+  clusterEvalQ(cl,list(library(raster)))
+  parLapply(cl,rasters_spl,function(rasters){
+    ids_todo <- as.numeric(names(rasters))
+    ids <- as.numeric(names(rasters[1]))
+    merged <- rasters[[1]]
+    for(i in 2:length(rasters)){
+      print(i)
+      r2 <- rasters[[i]]
+      ids <- append(ids, as.numeric(names(rasters[i])))
+      newname <- paste(paste(ids, collapse="_"),".tif",sep="")
+      print(newname)
+      
+      if(i==2){
+        oldname <- newname
+      }
+      print(oldname)
+      oldlocation <- merged@file@name
+      merged <- mosaic(merged, r2,fun=mean)
+      newlocation <- merged@file@name
+      if(i!=2&oldlocation!=newlocation){
+        unlink(oldlocation)
+        unlink(sub(".grd",".gri",oldlocation))
+        print("deleted old temp file")
+      }
+      print("merged")
+      
+      gc()
+      if(i%%10==0){
+        writeRaster(merged, paste("./classificador_vol_america/rasters/pnoa/split/supercells/temp/",newname,sep=""),overwrite=T)
+        print("saved")
+        # rm(merged)
+        unlink(paste("./classificador_vol_america/rasters/pnoa/split/supercells/temp/",oldname,sep=""))
+        print("deleted")
+        oldname <- newname
+        # gc()
+      }
+    }
+  })
+  stopCluster(cl)
+  
+  
+  
+  
+}
+
+smoothen_raster_supercells <- function(rast,max_val){
+  id <- sub(" ","",sub(" ","",sub(".tif","",basename(rast@file@name))))
+  print(id)
+  if(length(unique(values(rast)))==1&is.na(unique(values(rast))[1])){
+    return(rast)
+  }
+  rast <- rast(rast)
+  # area <- expanse(rast)
+  area <- 9610000
+  rast_sc = supercells(rast, k = 4*area/500, compactness = 0.5)
+  rm(area)
+  ex <- exact_extract(rast, rast_sc, "mean")
+  rast_sc$value <- ex
+  rm(ex)
+  rast_sc <- st_rasterize(rast_sc[,"value"])
+  rast_sc <- rast(rast_sc)
+  rast_sc <- raster(rast_sc)
+  values(rast_sc) <- 10*values(rast_sc)/max_val 
+  writeRaster(rast_sc,paste("./classificador_vol_america/rasters/pnoa/split/supercells/",id,".tif",sep=""))
+  rast_sc
+}
+
 
 smoothen_raster_ <- function(rast, seed=8){
   smoothen_raster__ <- function(x, rast){
