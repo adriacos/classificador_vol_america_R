@@ -596,10 +596,24 @@ clump_vector_global <- function(){
   gc()
 }
 
+create_grid <- function(ext,row,col){
+  limit <- ext
+  grid <- st_as_sf(st_make_grid(limit,n=c(row,col)))#cellsize = c(3000,3000)))
+  grid$id <- 1:nrow(grid)
+  grid$ori <- 0
+  grid[grid$id%%4==0,"ori"] <- 0
+  grid[grid$id%%4==1,"ori"] <- 1
+  grid[grid$id%%4==2,"ori"] <- 2
+  grid[grid$id%%4==3,"ori"] <- 3
+  grid <- st_intersection(grid, limit)
+  st_write(grid, "./classificador_vol_america/temp/grid_30x30.gpkg",overwrite=T)
+}
+
 clump_vector_combine <- function(){
   
-  vects <- reproject_EPSG_25831_vect(readOGR("./classificador_vol_america/vect/vectorised/global_qgis.shp"))
-  vects <- reproject_EPSG_4258_vect(vects)
+  # vects <- reproject_EPSG_25831_vect(readOGR("./classificador_vol_america/vect/merged_10_round.gpkg"))
+  vects <- readOGR("./classificador_vol_america/vect/merged_10_round.gpkg")
+  # vects <- reproject_EPSG_4258_vect(vects)
   
   vects$quad_id <- NA
   vects$quad_ori <- NA
@@ -619,21 +633,29 @@ clump_vector_combine <- function(){
     }
     
     if(ikm==1){
-      quads <- reproject_EPSG_4258_vect(get_quad_vect())
+      quads <- create_grid(vects,100,100)
+      # quads <- reproject_EPSG_4258_vect(get_quad_vect())
     }else if(ikm==2){
-      quads <- reproject_EPSG_4258_vect(get_quad_vect_2km())
+      quads <- create_grid(vects,50,50)
+      # quads <- reproject_EPSG_4258_vect(get_quad_vect_2km())
     }else if(ikm==3){
-      quads <- reproject_EPSG_4258_vect(get_quad_vect_3km())
+      quads <- create_grid(vects,30,30)
+      # quads <- reproject_EPSG_4258_vect(get_quad_vect_3km())
     }else if(ikm==5){
-      quads <- reproject_EPSG_4258_vect(get_quad_vect_5km())
+      quads <- create_grid(vects,20,20)
+      # quads <- reproject_EPSG_4258_vect(get_quad_vect_5km())
     }else if(ikm==7){
-      quads <- reproject_EPSG_4258_vect(get_quad_vect_7km())
+      quads <- create_grid(vects,14,14)
+      # quads <- reproject_EPSG_4258_vect(get_quad_vect_7km())
     }else if(ikm==10){
-      quads <- reproject_EPSG_4258_vect(get_quad_vect_10km())
+      quads <- create_grid(vects,10,10)
+      # quads <- reproject_EPSG_4258_vect(get_quad_vect_10km())
     }else if(ikm==20){
-      quads <- reproject_EPSG_4258_vect(get_quad_vect_20km())
+      quads <- create_grid(vects,5,5)
+      # quads <- reproject_EPSG_4258_vect(get_quad_vect_20km())
     }else if(ikm==30){
-      quads <- reproject_EPSG_4258_vect(get_quad_vect_30km())
+      quads <- create_grid(vects,3,3)
+      # quads <- reproject_EPSG_4258_vect(get_quad_vect_30km())
     }
     
     print(paste(ikm,"km"),sep="")

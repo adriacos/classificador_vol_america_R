@@ -10,6 +10,7 @@ vectorise_raster_by_url <- function(url){
 }
 
 vectorise_raster <- function(rast){
+  rast <- raster("./classificador_vol_america/rasters/pnoa/split/supercells/merged.tif")
   
   #round is done in QGIS because of memory issues
   #values(rast) <- round_any(values(rast), 0.5)
