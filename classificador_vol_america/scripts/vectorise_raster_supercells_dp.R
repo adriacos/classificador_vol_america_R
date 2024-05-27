@@ -22,10 +22,13 @@ vectorise_raster_supercells <- function(id){
 # rast <- raster("./classificador_vol_america/rasters/exported/5671.tif")
 
 vectorise_raster_supercells_global <- function(){
-  rast <- rast(raster)
+  limit <- st_read("./classificador_vol_america/vect/grids/limit.gpkg")
+  area <- as.numeric(st_area(limit))
+  rast <- raster("./classificador_vol_america/rasters/pnoa/BCN_1km.tif")
+  rast <- rast(rast)
   # area <- expanse(rast)
-  area <- 9610000
-  rast_sc = supercells(rast, k = 4*area/500, compactness = 0.5)
+  # area <- 9610000
+  rast_sc = supercells(rast, k = 16*area/500, compactness = 0.5)
   rm(area)
   # plot(rast)
   # plot(st_geometry(rast_sc), add = TRUE, lwd = 0.2)
