@@ -1,19 +1,9 @@
-# source("./classificador_vol_america/scripts/project.R")
-# source("./classificador_vol_america/scripts/calc_metrics.R")
-# source("./classificador_vol_america/scripts/read_data.R")
-# source("./classificador_vol_america/scripts/merge.R")
-
-# library(rgdal)
-# library(rgeos)
 library(stringr)
-# library(maptools)
 library(exactextractr)
 library(raster)
-# library(terra)
 library(smoothr)
 library(pryr)
 library(data.table)
-#library(sf)
 library(sf)
 
 
@@ -21,6 +11,7 @@ clump_vector_crop_raster <- function(vect,rast,quad_id,file_id,log=F){
   if(log==T){
     print(paste("crop raster",file_id,"_",quad_id,sep=""))    
   }
+  dir.create("./classificador_vol_america/rasters/temp/",showWarnings=F)
   dir.create(paste("./classificador_vol_america/rasters/temp/",file_id,"/",sep=""),showWarnings=F)
   unlink(paste("./classificador_vol_america/rasters/temp/",file_id,"/","clump_v_r",
                file_id,"_",quad_id,".gri",sep=""))
@@ -31,13 +22,8 @@ clump_vector_crop_raster <- function(vect,rast,quad_id,file_id,log=F){
   #   rast <- raster(paste("./classificador_vol_america/rasters/temp/",file_id,"/","clump_v_r",
   #                        file_id,"_",quad_id,".gri",sep=""))
   # }else{
-  if(!is.na(st_crs(rast))){
-    rast <- crop(rast, st_transform(vect,st_crs(rast)), filename=paste("./classificador_vol_america/rasters/temp/",file_id,"/","clump_v_r",
-                                                                       file_id,"_",quad_id,sep=""),overwrite=T)
-  }else{
-    rast <- crop(rast,vect,filename=paste("./classificador_vol_america/rasters/temp/",file_id,"/","clump_v_r",
-                                                                       file_id,"_",quad_id,sep=""),overwrite=T)
-  }
+  rast <- crop(rast, st_transform(vect,st_crs(rast)), filename=paste("./classificador_vol_america/rasters/temp/",file_id,"/","clump_v_r",
+                                                                     file_id,"_",quad_id,sep=""),overwrite=T)
   # writeRaster(rast,paste("./classificador_vol_america/rasters/temp/",file_id,"/","clump_v_r",
   #                        file_id,"_",quad_id,".tif",sep=""))
   # }
@@ -60,9 +46,9 @@ clump_vector_extract_values <- function(vect,rast,quad_id,file_id,var,operations
       }
     }
     vect[,name] <- exact_extract(rast, vect, operation, progress=F)
-    # if(nrow(vect[is.na(vect[,name]),])>0){
-    #   vect[is.na(vect[,name]),name:=0]
-    # }
+    if(nrow(vect[is.na(vect[,name]),]>0)){
+      vect[is.na(vect[,name]),name:=0]
+    }
     if(log==T){
       print(paste("quad:",quad_id," file:",file_id," ",name," extracted",sep=""))
     }  
@@ -149,9 +135,9 @@ clump_vector_remove_repited <- function(vect_dt,quad_id,file_id){
         }
         x <- x+1
       }
-      if(!file.exists(paste("./test/","file_",file_id,"quad_",quad_id,as.data.frame(tt)[1,"id"],".gpkg",sep=""))){
-        st_write(tt,paste("./test/","file_",file_id,"quad_",quad_id,as.data.frame(tt)[1,"id"],".gpkg",sep=""))
-      }
+      # if(!file.exists(paste("./test/","file_",file_id,"quad_",quad_id,as.data.frame(tt)[1,"id"],".gpkg",sep=""))){
+      #   st_write(tt,paste("./test/","file_",file_id,"quad_",quad_id,as.data.frame(tt)[1,"id"],".gpkg",sep=""))
+      # }
       data.table(rep)
     },quad_id,file_id),use.names=T)
     vect_dt <- rbind(vect_dupl,vect_nodupl)
@@ -164,14 +150,20 @@ clump_vector_remove_repited <- function(vect_dt,quad_id,file_id){
 }
 
 extract_metrics_parallel <- function(vect,rast,quad_id,file_id,var,operations=c("mean"),log=F){
-  library(parallel)
   n.cores <- ceiling(detectCores()/2)
   vect_dt <- as.data.table(vect)
   bbox <- st_bbox(vect)
-  bbox["xmin"] <-min(sapply(vect_dt$geometry,function(v){st_bbox(v)$xmin}))
-  bbox["ymin"] <- min(sapply(vect_dt$geometry,function(v){st_bbox(v)$ymin}))
-  bbox["xmax"] <- max(sapply(vect_dt$geometry,function(v){st_bbox(v)$xmax}))
-  bbox["ymax"] <- max(sapply(vect_dt$geometry,function(v){st_bbox(v)$ymax}))
+  if("geometry"%in%colnames(vect_dt)){
+    bbox["xmin"] <-min(sapply(vect_dt$geometry,function(v){st_bbox(v)$xmin}))
+    bbox["ymin"] <- min(sapply(vect_dt$geometry,function(v){st_bbox(v)$ymin}))
+    bbox["xmax"] <- max(sapply(vect_dt$geometry,function(v){st_bbox(v)$xmax}))
+    bbox["ymax"] <- max(sapply(vect_dt$geometry,function(v){st_bbox(v)$ymax}))    
+  }else if("geom"%in%colnames(vect_dt)){
+    bbox["xmin"] <-min(sapply(vect_dt$geom,function(v){st_bbox(v)$xmin}))
+    bbox["ymin"] <- min(sapply(vect_dt$geom,function(v){st_bbox(v)$ymin}))
+    bbox["xmax"] <- max(sapply(vect_dt$geom,function(v){st_bbox(v)$xmax}))
+    bbox["ymax"] <- max(sapply(vect_dt$geom,function(v){st_bbox(v)$ymax}))    
+  }
   limit <- st_as_sf(st_sf(st_as_sfc(bbox)))
   rm(bbox)
   width <- as.numeric(sqrt(st_area(limit)))/1000
@@ -195,8 +187,9 @@ extract_metrics_parallel <- function(vect,rast,quad_id,file_id,var,operations=c(
   gc()
   cl <- create_cluster_clump_(n.cores,outfile="clump_vector_parallelextract")
   vect <- do.call(rbind,parLapplyLB(cl,vect_dt,function(vv,quad_id,file_id,rast,log,km_core,var,operations){
+    source("./classificador_vol_america/scripts/clump_vector.R")
     id <- vv[[1,paste("quad_id_",km_core,"km",sep="")]]
-    print(id)
+    # print(id)
     vv <- st_as_sf(vv)
     rast <- clump_vector_crop_raster(vv,rast,paste(quad_id,"-",id,sep=""),file_id,log)
     gc()
@@ -222,13 +215,24 @@ extract_metrics_parallel <- function(vect,rast,quad_id,file_id,var,operations=c(
 }
 
 extract_neighbors_parallel <- function(vect,quad_id,file_id,log=F){
+  # print("extract neighbors parallel 1")
   n.cores <- ceiling(detectCores()-(detectCores()/4))
   vect_dt <- as.data.table(vect)
   bbox <- st_bbox(vect)
-  bbox["xmin"] <-min(sapply(vect_dt$geometry,function(v){st_bbox(v)$xmin}))
-  bbox["ymin"] <- min(sapply(vect_dt$geometry,function(v){st_bbox(v)$ymin}))
-  bbox["xmax"] <- max(sapply(vect_dt$geometry,function(v){st_bbox(v)$xmax}))
-  bbox["ymax"] <- max(sapply(vect_dt$geometry,function(v){st_bbox(v)$ymax}))
+  
+  if("geometry"%in%colnames(vect_dt)){
+    geom_colname <- "geometry" 
+    bbox["xmin"] <- min(sapply(vect_dt$geometry,function(v){st_bbox(v)$xmin}))
+    bbox["ymin"] <- min(sapply(vect_dt$geometry,function(v){st_bbox(v)$ymin}))
+    bbox["xmax"] <- max(sapply(vect_dt$geometry,function(v){st_bbox(v)$xmax}))
+    bbox["ymax"] <- max(sapply(vect_dt$geometry,function(v){st_bbox(v)$ymax}))
+  }else if("geom"%in%colnames(vect_dt)){
+    geom_colname <- "geom"
+    bbox["xmin"] <- min(sapply(vect_dt$geom,function(v){st_bbox(v)$xmin}))
+    bbox["ymin"] <- min(sapply(vect_dt$geom,function(v){st_bbox(v)$ymin}))
+    bbox["xmax"] <- max(sapply(vect_dt$geom,function(v){st_bbox(v)$xmax}))
+    bbox["ymax"] <- max(sapply(vect_dt$geom,function(v){st_bbox(v)$ymax}))
+  }
   limit <- st_as_sf(st_sf(st_as_sfc(bbox)))
   rm(bbox)
   gc()
@@ -262,11 +266,17 @@ extract_neighbors_parallel <- function(vect,quad_id,file_id,log=F){
   rm(unique_ids)
   gc()
   unlink("./classificador_vol_america/logs/clump_vector_neighbours_get.txt")
+  # print("extract neighbors parallel 2")
   cl <- create_cluster_clump_(n.cores,outfile="clump_vector_neighbours_get")
-  vect_dt <- rbindlist(parLapplyLB(cl,vect_dt,function(vv){
-    vv <- vv[,c("id","geometry")]
+  vect_dt <- parLapplyLB(cl,vect_dt,function(vv){
+    print(vv$quad_id_0.171589533730159km[1])
+    if("geometry"%in%colnames(vv)){
+      vv <- vv[,c("id","geometry")]
+    }else if("geometry"%in%colnames(vv)){
+      vv <- vv[,c("id","geom")]      
+    }
     id <- vv[[1,"id"]]
-    print(nrow(vv))
+    # print(nrow(vv))
     vv <- st_as_sf(vv)
     neighbours <- st_overlaps(st_cast(vv, "MULTILINESTRING"))
     vv$neighbors <- sapply(neighbours,function(nn,ids){
@@ -291,6 +301,12 @@ extract_neighbors_parallel <- function(vect,quad_id,file_id,log=F){
         if(nrow(v)==0){
           return(NULL)
         }
+        
+        if("geom"%in%colnames(vv)){
+          colnames(v)[colnames(v)=="geometry"] <- "geom"
+          st_geometry(v) <- "geom"
+        }
+        
         v <- rbind(vv[vv$id%in%str_split(v$tt,",")[[1]],c("id","tt")],st_cast(v,"POLYGON"))
         rownames(v) <- 1:nrow(v)
         v$tt <- st_equals(v,remove_self=T)
@@ -323,12 +339,31 @@ extract_neighbors_parallel <- function(vect,quad_id,file_id,log=F){
     # print(id)
     gc()
     vv
-  }),use.names=T)
+  })#,use.names=T)
   stopCluster(cl)
   rm(cl)
   rm(n.cores)
   gc()
   unlink("./classificador_vol_america/logs/clump_vector_neighbours_get.txt")
+  # print("extract neighbors parallel 3")
+  if(geom_colname=="geometry"){
+    vect_dt <- lapply(vect_dt,function(vv){
+      if("geom"%in%colnames(vv)){
+        colnames(vv)[colnames(vv)=="geom"] <- "geometry"
+        st_geometry(vv) <- "geometry"
+      }
+      vv
+    })
+  }else if(geom_colname=="geom"){
+    vect_dt <- lapply(vect_dt,function(vv){
+      if("geometry"%in%colnames(vv)){
+        colnames(vv)[colnames(vv)=="geometry"] <- "geom"
+        st_geometry(vv) <- "geom"
+      }
+      vv
+    })
+  }
+  vect_dt <- rbindlist(vect_dt,use.names=T)
   vect_dt <- vect_dt[,.(neighbors=paste(neighbors,collapse=",")),by=id]
   vect_dt[,neighbors:=sapply(neighbors,function(n){
     n <- unique(str_split(n,",")[[1]])
@@ -337,6 +372,7 @@ extract_neighbors_parallel <- function(vect,quad_id,file_id,log=F){
     paste(n,collapse=",")
   })]
   
+  # print("extract neighbors parallel 4")
   vect$neighbors <- NULL
   vect <- merge(vect,vect_dt,by="id")
   rm(vect_dt)
@@ -367,111 +403,19 @@ clump_vector_prepare <- function(vect_dt,rast,quad_id,file_id,extract=T,parallel
         if(log==T){
           print(paste("quad:",quad_id," file:",file_id," Parallel extract-",Sys.time()))
         }
-        # n.cores <- detectCores()-(detectCores()/4)
-        # n.cores <- detectCores()
         
-        vect <- st_as_sf(extract_metrics_parallel(vect,rast,quad_id=quad_id,file_id=file_id,var="value",operations=c("mean","sd")))
-        if(nrow(vect[is.na(vect$DN),])>0){
-          vect[is.na(vect$DN),"DN"] <- 5
-        }
-        if(nrow(vect[is.na(vect$sd),])>0){
-          vect[is.na(vect$DN),"sd"] <- 0
-        }
-        # vect[is.na(vect$DN),"sd"] <- 0
-        # 
-        # n.cores <- ceiling(detectCores()/2)
-        # vect_dt <- as.data.table(vect)
-        # bbox <- st_bbox(vect)
-        # bbox["xmin"] <-min(sapply(vect_dt$geometry,function(v){st_bbox(v)$xmin}))
-        # bbox["ymin"] <- min(sapply(vect_dt$geometry,function(v){st_bbox(v)$ymin}))
-        # bbox["xmax"] <- max(sapply(vect_dt$geometry,function(v){st_bbox(v)$xmax}))
-        # bbox["ymax"] <- max(sapply(vect_dt$geometry,function(v){st_bbox(v)$ymax}))
-        # limit <- st_as_sf(st_sf(st_as_sfc(bbox)))
-        # rm(bbox)
-        # width <- as.numeric(sqrt(st_area(limit)))/1000
-        # 
-        # free.mem <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo",intern=TRUE))/1024
-        # if(width/(sqrt(n.cores))<=free.mem/(2100*n.cores)){
-        #   km_core <- width/(sqrt(n.cores))
-        # }else{
-        #   km_core <- free.mem/(2100*n.cores)
-        # }
-        # rm(free.mem)
-        # vect_dt <- set_quad_ori_km_first(vect_dt,km_core,limit,log=F)
-        # rm(limit)
-        # vect_dt[,paste("quad_id_",km_core,"km",sep=""):=sapply(vect_dt[[which(colnames(vect_dt)==paste("quad_id_",km_core,"km",sep=""))]],function(id){
-        #   str_split(id,",")[[1]][1]
-        # })]
-        # # setindex(vect_dt,paste("quad_id_",(width/(sqrt(n.cores))),"km",sep=""))
-        # vect_dt <- split(vect_dt,by=c(paste("quad_id_",km_core,"km",sep="")))
-        # unlink("./classificador_vol_america/logs/clump_vector_parallelextract.txt")
-        # rm(vect)
-        # gc()
-        # cl <- create_cluster_clump_(n.cores,outfile="clump_vector_parallelextract")
-        # vect <- do.call(rbind,parLapplyLB(cl,
-        #                                   vect_dt
-        #                                   # unique(vect_dt[[which(colnames(vect_dt)==paste("quad_id_",(width/(sqrt(n.cores))),"km",sep=""))]])
-        #                                   ,function(vv,quad_id,file_id,rast,log,km_core){
-        #                                     id <- vv[[1,paste("quad_id_",km_core,"km",sep="")]]
-        #                                     # print(id)
-        #                                     vv <- st_as_sf(vv)
-        #                                     rast <- clump_vector_crop_raster(vv,rast,paste(quad_id,"-",id,sep=""),file_id,log)
-        #                                     gc()
-        #                                     print(paste("quad:",quad_id," file:",file_id," id:",id," raster croped",sep=""))
-        #                                     vv <- clump_vector_extract_values(vv,rast,paste(quad_id,"-",id,sep=""),file_id,log)
-        #                                     rm(rast)
-        #                                     unlink(paste("./classificador_vol_america/rasters/temp/",file_id,"/","clump_v_r",file_id,"_",paste(quad_id,"-",id,sep=""),".gri",sep=""))
-        #                                     unlink(paste("./classificador_vol_america/rasters/temp/",file_id,"/","clump_v_r",file_id,"_",paste(quad_id,"-",id,sep=""),".grd",sep=""))
-        #                                     gc()
-        #                                     vv
-        #                                   },quad_id,file_id,rast,log,km_core))
-        # # },vect_dt,paste("quad_id_",(width/(sqrt(n.cores))),"km",sep="")))
-        # stopCluster(cl)
-        # rm(cl)
-        # unlink("./classificador_vol_america/logs/clump_vector_parallelextract.txt")
-        # rm(vect_dt)
-        # gc()
-        # vect[,paste("quad_ori_",km_core,"km",sep="")] <- NULL
-        # vect[,paste("quad_id_",km_core,"km",sep="")] <- NULL
-        # vect[,paste("quad_row_",km_core,"km",sep="")] <- NULL
-        # vect[,paste("quad_col_",km_core,"km",sep="")] <- NULL
-        # rm(width)
-        # print(paste("values extracted-",Sys.time()))
+        vect <- st_as_sf(extract_metrics_parallel(vect,rast,quad_id=quad_id,file_id=file_id,var="value",operations=c("mean","stdev")))
+        
       }else{
-        # rast <- clump_vector_crop_raster(vect,rast,quad_id,file_id,log)
-        # # print("raster croped")
         vect <- clump_vector_extract_values(vect,rast,quad_id,file_id,log)
-        # unlink(paste("./classificador_vol_america/rasters/temp/",file_id,"/","clump_v_r",file_id,"_",quad_id,".gri",sep=""))
-        # unlink(paste("./classificador_vol_america/rasters/temp/",file_id,"/","clump_v_r",file_id,"_",quad_id,".grd",sep=""))
       }
       rm(rast)
       gc()
     }
-    # rast <- clump_vector_crop_raster(vect,rast,quad_id,file_id)
-    # values(rast) <- 10*values(rast)/max(values(rast),na.rm=T)
-    # 
-    # vect$sd <- exact_extract(rast, vect, "stdev", progress=F)
-    # if(nrow(vect[is.na(vect$sd),]>0)){
-    #   vect[is.na(vect$sd),"sd":=0]
-    # }
-    # # print("sd extracted")
-    # 
-    # vect$DN  <- exact_extract(rast, vect, "mean", progress=F)
-    # if(nrow(vect[is.na(vect$DN),]>0)){
-    #   vect[is.na(vect$DN),"DN":=5]
-    # }
-    # vect$DN <- as.numeric(vect$DN)
-    # # print("DN extracted")
-    # rm(rast)
-    # unlink(paste("./classificador_vol_america/rasters/temp/",file_id,"/","clump_v_r",file_id,"_",quad_id,".gri",sep=""))
-    # unlink(paste("./classificador_vol_america/rasters/temp/",file_id,"/","clump_v_r",file_id,"_",quad_id,".grd",sep=""))
-    # # else if((length(unique(as.data.frame(vect)[,"plare"]))==1&unique(is.na(unique(as.data.frame(vect)[,"plare"]))))){
-    # #   vect$plare <- as.character(vect$area)
-    # # }
   }
   
   n.row <- nrow(vect)
-  vect <- st_as_sf(clump_vector_remove_repited(data.table(vect),quad_id,file_id))
+  vect <- st_as_sf(clump_vector_remove_repited(vect_dt=data.table(vect),quad_id=quad_id,file_id=file_id))
   if(n.row-nrow(vect)!=0){
     print(paste("START quad:",quad_id," file:",file_id," ",n.row-nrow(vect)," repeated rows removed",sep=""))
   }
@@ -483,173 +427,10 @@ clump_vector_prepare <- function(vect_dt,rast,quad_id,file_id,extract=T,parallel
   }
   library(nngeo)
   if(parallelextract==T){
-    
-    
     vect <- extract_neighbors_parallel(vect,quad_id,file_id,log)
-    # 
-    # n.cores <- ceiling(detectCores()-(detectCores()/4))
-    # # n.cores <- 16
-    # vect_dt <- as.data.table(vect)
-    # bbox <- st_bbox(vect)
-    # bbox["xmin"] <-min(sapply(vect_dt$geometry,function(v){st_bbox(v)$xmin}))
-    # bbox["ymin"] <- min(sapply(vect_dt$geometry,function(v){st_bbox(v)$ymin}))
-    # bbox["xmax"] <- max(sapply(vect_dt$geometry,function(v){st_bbox(v)$xmax}))
-    # bbox["ymax"] <- max(sapply(vect_dt$geometry,function(v){st_bbox(v)$ymax}))
-    # limit <- st_as_sf(st_sf(st_as_sfc(bbox)))
-    # rm(bbox)
-    # width <- as.numeric(sqrt(st_area(limit)))/1000
-    # 
-    # free.mem <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo",intern=TRUE))/1024
-    # if(width/(sqrt(n.cores))<=free.mem/(2800*n.cores)){
-    #   km_core <- width/(sqrt(n.cores))
-    # }else{
-    #   km_core <- free.mem/(2800*n.cores)
-    # }
-    # 
-    # vect_dt <- set_quad_ori_km_first(vect_dt,km_core,limit,log=F)
-    # rm(limit)
-    # # vect_dt[,paste("quad_id_",(width/(sqrt(n.cores))),"km",sep=""):=sapply(vect_dt[[which(colnames(vect_dt)==paste("quad_id_",(width/(sqrt(n.cores))),"km",sep=""))]],function(id){
-    # #   str_split(id,",")[[1]][1]
-    # # })]
-    # # setindex(vect_dt,paste("quad_id_",(width/(sqrt(n.cores))),"km",sep=""))
-    # unique_ids <- unique(vect_dt[[paste("quad_id_",km_core,"km",sep="")]])
-    # vect_dt <- split(vect_dt,by=c(paste("quad_id_",km_core,"km",sep="")))
-    # for(id in unique_ids){
-    #   if(grepl(",",id,fixed=TRUE)){
-    #     ids_ <- str_split(id,",")[[1]]
-    #     for(id_ in ids_){
-    #       vect_dt[[id_]] <- rbind(vect_dt[[id_]],vect_dt[[id]])
-    #     }
-    #   }
-    # }
-    # rm(id)
-    # rm(id_)
-    # rm(ids_)
-    # rm(width)
-    # unique_ids <- unique_ids[!(grepl(",",unique_ids,fixed=TRUE))]
-    # vect_dt <- vect_dt[unique_ids]
-    # rm(unique_ids)
-    # gc()
-    # unlink("./classificador_vol_america/logs/clump_vector_neighbours_get.txt")
-    # cl <- create_cluster_clump_(n.cores,outfile="clump_vector_neighbours_get")
-    # vect_dt <- rbindlist(parLapplyLB(cl,vect_dt,function(vv){
-    #   vv <- vv[,c("id","geometry")]
-    #   id <- vv[[1,"id"]]
-    #   # print(vv[[1,"id"]])
-    #   print(nrow(vv))
-    #   vv <- st_as_sf(vv)
-    #   # vv <- vv[vv$id==8632|vv$id==8589|vv$id==8557|vv$id==8628|vv$id==8590|vv$id==8652,]
-    #   neighbours <- st_overlaps(st_cast(vv, "MULTILINESTRING"))
-    #   # neighbours_i <- st_intersects(st_buffer(vv,0))
-    #   # neighbours_o <- st_overlaps(vv)
-    #   # neighbours_t <- st_touches(vv)
-    #   vv$neighbors <- sapply(neighbours,function(nn,ids){
-    #     paste(sapply(nn,function(n,ids){
-    #       ids[n]
-    #     },ids),collapse=",")
-    #   },as.data.frame(vv)$id)
-    #   rm(neighbours)
-    #   gc()
-    #   library(nngeo)
-    #   tt <- st_contains(st_remove_holes(vv),remove_self=T)
-    #   vv$tt <- sapply(tt,function(t,vv){
-    #     paste(vv[t,]$id,collapse=",")
-    #   },vv)
-    #   rm(tt)
-    #   gc()
-    #   if(nrow(as.data.frame(vv)[vv$tt!="",])>0){
-    #     contained <- as.data.frame(do.call(rbind,lapply(as.data.frame(vv)[vv$tt!="","id"],function(id,vv){
-    #       # print(id)
-    #       v <- vv[vv$id==id,]
-    #       v <- st_cast(st_difference(st_remove_holes(v),v)[c("id","tt")],"POLYGON")
-    #       if(nrow(v)==0){
-    #         return(NULL)
-    #       }
-    #       v <- rbind(vv[vv$id%in%str_split(v$tt,",")[[1]],c("id","tt")],st_cast(v,"POLYGON"))
-    #       rownames(v) <- 1:nrow(v)
-    #       v$tt <- st_equals(v,remove_self=T)
-    #       # v$tt <- st_overlaps(st_cast(v, "MULTILINESTRING"),remove_self=T)
-    #       v$tt <- sapply(v$tt,function(nn,ids){
-    #         paste(sapply(nn,function(n,ids){
-    #           ids[n]
-    #         },ids),collapse=",")
-    #       },as.data.frame(v)$id)
-    #       colnames(v)[colnames(v)=="tt"] <- "contained"
-    #       v <- data.table(v)[,c("id","contained")]
-    #       v <- v[,.(contained=paste(contained,collapse=",")),by=id]
-    #       v
-    #     },vv)))[,c("id","contained")]
-    #     vv <- merge(vv,contained,all.x=T)
-    #     vv$neighbors <- paste(vv$neighbors,vv$contained,sep=",")
-    #     vv$neighbors <- sapply(vv$neighbors,function(n){
-    #       n <- unique(str_split(n,",")[[1]])
-    #       n <- n[n!="NA"]
-    #       n <- n[n!=""]
-    #       paste(n,collapse=",")
-    #     })
-    #     rm(neighbours)
-    #     rm(contains)
-    #     vv$contained <- NULL
-    #     gc()
-    #   }  
-    #   vv$tt <- NULL
-    #   vv <- as.data.table(vv)
-    #   print(id)
-    #   gc()
-    #   vv
-    # }),use.names=T)
-    # stopCluster(cl)
-    # rm(cl)
-    # rm(n.cores)
-    # gc()
-    # unlink("./classificador_vol_america/logs/clump_vector_neighbours_get.txt")
-    # # rm(vect_dt)
-    # vect_dt <- vect_dt[,.(neighbors=paste(neighbors,collapse=",")),by=id]
-    # vect_dt[,neighbors:=sapply(neighbors,function(n){
-    #   # paste(unique(str_split(n,",")[[1]]),collapse=",")
-    #   n <- unique(str_split(n,",")[[1]])
-    #   n <- n[n!="NA"]
-    #   n <- n[n!=""]
-    #   paste(n,collapse=",")
-    #   })]
-    # 
-    # # vect[,paste("quad_ori_",(width/(sqrt(n.cores))),"km",sep="")] <- NULL
-    # # vect[,paste("quad_id_",(width/(sqrt(n.cores))),"km",sep="")] <- NULL
-    # # vect[,paste("quad_row_",(width/(sqrt(n.cores))),"km",sep="")] <- NULL
-    # # vect[,paste("quad_col_",(width/(sqrt(n.cores))),"km",sep="")] <- NULL
-    # vect$neighbors <- NULL
-    # vect <- merge(vect,vect_dt,by="id")
-    # rm(vect_dt)
-    # # print(paste("values extracted-",Sys.time()))
   }else{
-    # neighbours <- st_overlaps(st_cast(vect, "MULTILINESTRING"))
-    # st_overlaps(vect)
     neighbours <- st_overlaps(st_cast(vect, "MULTILINESTRING"))
     vect$neighbors <- sapply(neighbours,paste,collapse=",")
-    
-    # vect$neighbors <- sapply(as.data.frame(vect)$id,function(id,vect){
-    #   vv <- vect[vect$id==id,]
-    #   if(vv$neighbors==""){
-    #     return("")
-    #   }
-    #   nghbs <- vect[vect$id%in%str_split(vv$neighbors,",")[[1]],]
-    #   if(nrow(nghbs)==1){
-    #     return(nghbs$id)
-    #   }
-    #   nghbs <- nghbs[sapply(nghbs$id,function(id,nghbs,vv){
-    #     nghb <- nghbs[nghbs$id==id,]
-    #     vv <- st_cast(vv,"MULTILINESTRING")
-    #     if(st_length(st_intersection(st_cast(nghb,"MULTILINESTRING"),vv))>=0.01*st_length(vv)){
-    #       return(T)
-    #     }else{
-    #       return(F)
-    #     }
-    #   },nghbs,vv)==T,]
-    #   if(nrow(nghbs)==0){
-    #     return("")
-    #   }
-    #   return(paste(order(nghbs$id),collapse=","))
-    # },vect)
     
     tt <- st_contains(st_remove_holes(vect),remove_self=T)
     vect$tt <- sapply(tt,paste,collapse=",")
@@ -662,6 +443,12 @@ clump_vector_prepare <- function(vect_dt,rast,quad_id,file_id,extract=T,parallel
         if(nrow(vv)==0){
           return(NULL)
         }
+        
+        if("geom"%in%colnames(vect)){
+          colnames(vv)[colnames(vv)=="geometry"] <- "geom"
+          st_geometry(vv) <- "geom"
+        }
+        
         vv <- rbind(vect[vect$id%in%str_split(vv$tt,",")[[1]],c("id","tt")],st_cast(vv,"POLYGON"))
         rownames(vv) <- 1:nrow(vv)
         vv$tt <- st_equals(vv,remove_self=T)
@@ -697,7 +484,7 @@ clump_vector_prepare <- function(vect_dt,rast,quad_id,file_id,extract=T,parallel
   vect$toignore <- FALSE
   # st_area(vect)
   
-  # print(paste(file_id,quad_id,"prepared",Sys.time()))
+  print(paste(file_id,quad_id,"prepared",Sys.time()))
   vect_dt <- as.data.table(vect)
   # st_area(st_as_sf(vect_dt))
   rm(vect)
@@ -739,23 +526,40 @@ clump_vector_prepare <- function(vect_dt,rast,quad_id,file_id,extract=T,parallel
 }
 
 clump_vector_simplify <- function(vect_dt,rast,quad_id,file_id,km,
-                                  log=T,prepare=T){
+                                  log=T,prepare=T,parallelextract=F){
   if(nrow(vect_dt)==0){
     return(T)
   }
+  load("./classificador_vol_america/temp/resolution.RData")
+  load("./classificador_vol_america/temp/minres.RData")
   arealimit <- 38*resolution
   
-  load("./classificador_vol_america/temp/minres.RData")
   if(log==T){
     print(paste("CLUMP VECTOR",file_id,quad_id,nrow(vect_dt),Sys.time(),sep="-"))
   }
   dir.create("./classificador_vol_america/vect/temp/clumped/",showWarnings=F)
   dir.create(paste("./classificador_vol_america/vect/temp/clumped/",file_id,"/",sep=""),showWarnings=F)
-  load("./classificador_vol_america/temp/resolution.RData")
+  
+  if((as.numeric(min(st_area(st_as_sf(vect_dt))))>arealimit)||nrow(vect_dt)==1){
+    # vect_dt[,neighbors:=NULL]
+    # vect_dt[,toignore:=NULL]
+    vect_dt[,area:=abs(as.numeric(st_area(st_as_sf(vect_dt))))]
+    # vect_dt[,area:=abs(vect$st_as_sf(vect_dt))
+    vect_dt[,id:=1:nrow(st_as_sf(vect_dt))]
+    saveRDS(vect_dt,paste("./classificador_vol_america/vect/temp/clumped/",file_id,"/",quad_id,".rds",sep=""))
+    if(log==T){
+      print(paste(file_id,quad_id,
+                  "FINISH", Sys.time(),
+                  sep=" - "))
+    }
+    return(T)
+  }
   
   rast <- clump_vector_crop_raster(st_as_sf(vect_dt),rast,quad_id,file_id,log)
   # values(rast) <- 10*values(rast)/255
-  vect_dt <- clump_vector_prepare(vect_dt,rast,quad_id,file_id,extract=F,log=log)
+  vect_dt <- clump_vector_prepare(vect_dt,rast,quad_id,file_id,extract=F,log=log,parallelextract=parallelextract)
+  
+  print("prepared")
   
   time <- Sys.time()
   
@@ -853,8 +657,17 @@ clump_vector_simplify <- function(vect_dt,rast,quad_id,file_id,km,
     vect.union <- st_as_sf(st_union(st_combine(st_as_sf(vect_dt[J(ids),])),by_feature=T))
     vect.df[,geometry:=NULL]
     vect.shp.agg <- cbind(vect.union,vect.df)
-    colnames(vect.shp.agg)[colnames(vect.shp.agg)=="x"] <- "geometry"
-    st_geometry(vect.shp.agg) <- "geometry"
+    
+    if("geometry"%in%colnames(vect_dt)){
+      colnames(vect.shp.agg)[colnames(vect.shp.agg)=="x"] <- "geometry"
+      st_geometry(vect.shp.agg) <- "geometry"      
+    }else if("geom"%in%colnames(vect_dt)){
+      colnames(vect.shp.agg)[colnames(vect.shp.agg)=="x"] <- "geom"
+      st_geometry(vect.shp.agg) <- "geom"      
+    }
+    
+    # colnames(vect.shp.agg)[colnames(vect.shp.agg)=="x"] <- "geometry"
+    # st_geometry(vect.shp.agg) <- "geometry"
     st_crs(vect.shp.agg) <- st_crs(st_crs(st_as_sf(vect_dt)))
     vect_dt[J(ids[1]),names(vect_dt)[-which(names(vect_dt)=="id")]:=vect.shp.agg[,names(vect_dt)[-which(names(vect_dt)=="id")]]]
     vect_dt <- vect_dt[id!=ids[2]]
@@ -986,6 +799,9 @@ clump_vector <- function(vect_dt,rast,quad_id,file_id,
   }
   
   repeat{
+    # if(nrow(vect_dt)==9514){
+      # stop("9511")
+    # }
       vect.min <- vect_dt[.(FALSE),.SD[which.min(area)],on="toignore"]
       # cc <- cc+1
       # if(cc%%2000==0){
@@ -1190,15 +1006,16 @@ clump_vector <- function(vect_dt,rast,quad_id,file_id,
         # stop()
         vect_dt[,toignore:=F]
         firstminres=T
+        next()
       }
     }
-    # if(vect.min$neighbors==""){
-    #   vect_dt[J(vect.min$id),toignore:=T]
-    #   rm(vect.min)
-    #   rm(vect.min.neighbors.min)
-    #   # print("next")
-    #   next()
-    # }
+    if(vect.min$neighbors==""){
+      vect_dt[J(vect.min$id),toignore:=T]
+      rm(vect.min)
+      rm(vect.min.neighbors.min)
+      # print("next")
+      next()
+    }
       
     vect.min.neighbors <- vect_dt[.(as.numeric(str_split(vect.min$neighbors, ",")[[1]]))]
     
@@ -1468,10 +1285,22 @@ clump_vector <- function(vect_dt,rast,quad_id,file_id,
     }
     
     vect.union <- st_as_sf(st_union(st_combine(st_as_sf(vect_dt[J(ids),])),by_feature=T))
-    vect.df[,geometry:=NULL]
-    vect.shp.agg <- cbind(vect.union,vect.df)
-    colnames(vect.shp.agg)[colnames(vect.shp.agg)=="x"] <- "geometry"
-    st_geometry(vect.shp.agg) <- "geometry"
+    # stop("xx")
+    if("geometry"%in%colnames(vect_dt)){
+      vect.df[,geometry:=NULL]
+      # vect.df[,geom:=NULL]
+      # vect.df[,geometry:=NULL]
+      vect.shp.agg <- cbind(vect.union,vect.df)
+      colnames(vect.shp.agg)[colnames(vect.shp.agg)=="x"] <- "geometry"
+      st_geometry(vect.shp.agg) <- "geometry"      
+    }else if("geom"%in%colnames(vect_dt)){
+      vect.df[,geom:=NULL]
+      # vect.df[,geom:=NULL]
+      # vect.df[,geometry:=NULL]
+      vect.shp.agg <- cbind(vect.union,vect.df)
+      colnames(vect.shp.agg)[colnames(vect.shp.agg)=="x"] <- "geom"
+      st_geometry(vect.shp.agg) <- "geom"      
+    }
     st_crs(vect.shp.agg) <- st_crs(st_crs(st_as_sf(vect_dt)))
     # if(vect.min$area>=300){
     vect.shp.agg$sd <- exact_extract(rast, vect.shp.agg, "stdev", progress=F) 
@@ -1486,7 +1315,7 @@ clump_vector <- function(vect_dt,rast,quad_id,file_id,
     if(c%%200==0){
       # if(log==T){
         print(paste(file_id,quad_id,c,vect.min$area,nrow(vect_dt),sep="-"))
-      # }
+      }
       # time <- Sys.time()
     }
     vect.min <- NULL
@@ -1655,10 +1484,17 @@ set_quad_ori_km_first <- function(vects_dt,ikm,limit,log=T){
   if(log==T){
     print(paste(ikm,"km"))
   }
- xmins <- sapply(vects_dt$geometry,function(v){st_bbox(v)$xmin})
-  ymins <- sapply(vects_dt$geometry,function(v){st_bbox(v)$ymin})
-  xmaxs <- sapply(vects_dt$geometry,function(v){st_bbox(v)$xmax})
-  ymaxs <- sapply(vects_dt$geometry,function(v){st_bbox(v)$ymax})
+  if("geometry"%in%colnames(vects_dt)){
+    xmins <- sapply(vects_dt$geometry,function(v){st_bbox(v)$xmin})
+    ymins <- sapply(vects_dt$geometry,function(v){st_bbox(v)$ymin})
+    xmaxs <- sapply(vects_dt$geometry,function(v){st_bbox(v)$xmax})
+    ymaxs <- sapply(vects_dt$geometry,function(v){st_bbox(v)$ymax})
+  }else if("geom"%in%colnames(vects_dt)){
+    xmins <- sapply(vects_dt$geom,function(v){st_bbox(v)$xmin})
+    ymins <- sapply(vects_dt$geom,function(v){st_bbox(v)$ymin})
+    xmaxs <- sapply(vects_dt$geom,function(v){st_bbox(v)$xmax})
+    ymaxs <- sapply(vects_dt$geom,function(v){st_bbox(v)$ymax})
+  }
   
   cuts <- get_cuts_from_limit(limit,ikm)
   
@@ -2159,7 +1995,7 @@ create_cluster_clump_ <- function(n.cores,outfile=NULL){
     }
     cl <- makeCluster(n.cores, outfile=paste("./classificador_vol_america/logs/",outfile,".txt",sep=""))
     clusterExport(cl, list("clump_vector"))
-    clusterEvalQ(cl, list(library(maptools), library(sf), library(stringr), library(raster), library(exactextractr)))
+    clusterEvalQ(cl, list(library(maptools), library(sf), library(stringr), library(raster), library(exactextractr),library(data.table)))
     
   }else if(Sys.info()['sysname']=="Linux"){
     cl <- makeForkCluster(n.cores, outfile=paste("./classificador_vol_america/logs/",outfile,".txt",sep=""))
