@@ -1,6 +1,6 @@
 source("./classificador_vol_america/scripts/smoothen_raster.R")
 print(paste(Sys.time(),"smoothen_raster_supercells_do"))
-load("./classificador_vol_america/temp/max_val.RData")
+# load("./classificador_vol_america/temp/max_val.RData")
 load("./classificador_vol_america/temp/smoothen_raster_grid.RData")
 
 dir.create("./classificador_vol_america/rasters/smoothen",showWarnings=F)
@@ -17,6 +17,26 @@ if(length(files)>0){
     {
       # print(paste(Sys.time(),"do",sep="-"))
       n.cores <- detectCores()
+      # limit <- st_read("./classificador_vol_america/vect/limit.gpkg")
+      # width <- as.numeric(sqrt(st_area(st_read("./classificador_vol_america/vect/limit.gpkg"))))/1000
+      free.mem <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo",intern=TRUE))/1024
+      if(ceiling(sqrt(free.mem)/(255/11))<=n.cores){
+        n.cores<-ceiling(sqrt(free.mem)/(255/11))
+      }
+      
+      # sapply(list.files("./classificador_vol_america/rasters/smoothen/split",pattern=".tif$")[order(sapply(list.files("./classificador_vol_america/rasters/smoothen/split",pattern=".tif$"),function(x){
+      #   file.info(paste("./classificador_vol_america/rasters/smoothen/split/",x,sep=""))$mtime
+      # }),decreasing=T)][1:n.cores],function(x){
+      #   unlink(paste("./classificador_vol_america/rasters/smoothen/split/",x,sep=""))
+      # })
+      # sapply(list.files("./classificador_vol_america/rasters/smoothen/split",pattern=".tif$"),function(x){
+      #   if(file.info(paste("./classificador_vol_america/rasters/smoothen/split/",x,sep=""))$size==0){
+      #     unlink(paste("./classificador_vol_america/rasters/smoothen/split/",x,sep=""))
+      #   }
+      # })
+      # files_done <- list.files("./classificador_vol_america/rasters/smoothen/split",pattern=".tif$")
+      # files <- files[!files%in%files_done]
+      max_val <- 10
       source("./classificador_vol_america/scripts/clump_vector.R")
       unlink("./classificador_vol_america/logs/smoothen_raster_supercells_.txt")
       clust <- create_cluster_clump_(n.cores,"smoothen_raster_supercells_")
@@ -54,6 +74,10 @@ if(length(files>0)){
   save(smoothen_raster_do_ids_failed,file="./classificador_vol_america/temp/smoothen_raster_do_ids_failed.RData")
   rm(smoothen_raster_do_ids_failed)
   n.cores <- detectCores()
+  free.mem <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo",intern=TRUE))/1024
+  if(ceiling(sqrt(free.mem)/(255/11))<=n.cores){
+    n.cores<-ceiling(sqrt(free.mem)/(255/11))
+  }
   unlink("./classificador_vol_america/logs/smoothen_raster_supercells_failed_.txt")
   clust <- create_cluster_clump_(n.cores,"smoothen_raster_supercells_failed_")
   parLapplyLB(clust,raster_split,smoothen_raster_supercells_,max_val,smoothen_raster_grid,pretty=F)

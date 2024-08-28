@@ -22,7 +22,13 @@ print(paste(length(files_list)," files to vectorise",sep=""))
 
 # crs <- st_crs(st_read("./classificador_vol_america/vect/grids/limit.gpkg"))
 crs <- st_crs(st_read("./classificador_vol_america/vect/limit.gpkg"))
-n.cores <- round(detectCores()-(detectCores()/2))
+# n.cores <- round(detectCores()-(detectCores()/2))
+
+n.cores <- detectCores()
+free.mem <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo",intern=TRUE))/1024
+if(ceiling(sqrt(free.mem)/(252/2))<=n.cores){
+  n.cores<-ceiling(sqrt(free.mem)/(252/2))
+}
 # n.cores <- 3
 source("./classificador_vol_america/scripts/vectorise_raster.R")
 unlink("./classificador_vol_america/logs/vectorise_raster_do.txt")

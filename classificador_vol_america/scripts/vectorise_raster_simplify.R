@@ -34,10 +34,11 @@ names(files_list) <- sapply(files_list,function(x){
 if(length(files_list)>0){
   dir.create("./classificador_vol_america/vect/clumped/",showWarnings=F)
   dir.create("./classificador_vol_america/vect/clumped/temp/",showWarnings=F)
-  dir.create("./classificador_vol_america/vect/temp/")
-  dir.create("./classificador_vol_america/rasters/temp/")
+  dir.create("./classificador_vol_america/vect/temp/",showWarnings=F)
+  dir.create("./classificador_vol_america/rasters/temp/",showWarnings=F)
   dir.create("./classificador_vol_america/vect/vectorised/split/simplified", showWarnings = FALSE)
-  rast <- raster("./classificador_vol_america/rasters/original/original.tif")
+  # rast <- raster("./classificador_vol_america/rasters/original/original.tif")
+  rast <- raster("./classificador_vol_america/rasters/original/normalised.tif")
   source("./classificador_vol_america/scripts/clump_vector.R")
   crs <- st_crs(st_read("./classificador_vol_america/vect/limit.gpkg"))
   # source("./classificador_vol_america/scripts/vectorise_raster_simplify_function.R")
@@ -88,10 +89,13 @@ if(length(files_list)>0){
     long <- nrows[nrows>breaks[2]]
     long <- files_list[names(files_list)%in%names(long)]
     
+    if(length(long)>0){
+      long <- split(long, cut(seq_along(long),n.cores,labels=F))
+      files_list <- mapply(function(s,l){append(s,l)},short,long,SIMPLIFY=F)
+    }else{
+      files_list <- short
+    }
     
-    long <- split(long, cut(seq_along(long),n.cores,labels=F))
-    
-    files_list <- mapply(function(s,l){append(s,l)},short,long,SIMPLIFY=F)
     files_list <- lapply(files_list,function(ff){
       ff[order(as.numeric(names(ff)))]
     })
@@ -100,11 +104,12 @@ if(length(files_list)>0){
     rm(long)
     rm(nrows)
     # files_list <- split(files_list, cut(seq_along(files_list),n.cores,labels=F))
+    gc()
     
     unlink("./classificador_vol_america/logs/vectorise_raster_simplify_parallel.txt")
     cl <- create_cluster_clump_(n.cores,"vectorise_raster_simplify_parallel")
     parLapplyLB(cl,files_list,function(files,rast,crs,resolution){
-      lapply(files,simplify_file,rast,crs,arealimit=38*resolution,parallel=F,dosmall=T,log=F)
+      lapply(files,simplify_file,rast,crs,arealimit=38*resolution,parallel=F,dosmall=T,log=T)
     },rast,crs,resolution)
     stopCluster(cl)
     rm(cl)

@@ -51,6 +51,16 @@ ini_set <- function(raster,minresolution,max_val,limit=NULL){
   minres <- minresolution
   save(minres,file="./classificador_vol_america/temp/minres.RData")
   
+  
+  if(max_val!=10){
+    print("Input raster should be normalised in a 0-10 scale but it seems not to be so. 
+          The raster will be normalised, which will take time and resources. 
+          In case the raster was already normalised in a 0-10 scale, please use parameter 'normalise=F'. 
+          In case it was not normalise, please consider normalising to a 0-10 scale 
+          by other means for more efficiency and restart the process.")
+  }else{
+    normalise<-F
+  }
   save(max_val,file="./classificador_vol_america/temp/max_val.RData")
   
   rm(rast)
@@ -66,8 +76,11 @@ ini_set <- function(raster,minresolution,max_val,limit=NULL){
   st_write(limit,"./classificador_vol_america/vect/limit.gpkg")
   rm(limit)
   
-  normalise_original()
-  
+  if(normalise){
+    normalise_original()  
+  }else{
+    
+  }
   
   gc()
   current_global <- "set"
@@ -167,7 +180,7 @@ normalise_original <- function(){
   # unlink("./classificador_vol_america/rasters/original/normalise/merged",recursive=T)
   # dir.create("./classificador_vol_america/rasters/original/normalise/merged")
   rasterinmemory <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo",intern=TRUE))-(as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo",intern=TRUE))/(detectCores()*2))
-  merge_rasters_ <- function(fs,r,rasterinmemory=NULL){
+  merge_rasters_ <- function(fs,r,rasterinmemory=NULL,last=F){
     if(!is.null(rasterinmemory)){
       # print("rrrr")
       rasterOptions(maxmemory=rasterinmemory)
@@ -203,7 +216,7 @@ normalise_original <- function(){
           if(!is.null(rasterinmemory)){
             rasterOptions(maxmemory=rasterinmemory)
           }
-          merged <- mosaic(merged,r2,fun=mean)
+          merged <- mosaic(merged,r2,fun=mean,na.rm=T)
           rm(r2)
           gc()
           newlocation <- merged@file@name
@@ -214,18 +227,26 @@ normalise_original <- function(){
           }
           print(paste(newname,i,"merged"))
           if(i==length(rs)){
-            writeRaster(merged, paste("./classificador_vol_america/rasters/original/normalise/split/normalised/",paste(rep("_",r),collapse=""),newname,sep=""),overwrite=T)
+            if(last==T){
+              writeRaster(merged,"./classificador_vol_america/rasters/original/original_normalised.tif",overwrite=T)
+            }else{
+              writeRaster(merged,paste("./classificador_vol_america/rasters/original/normalise/split/normalised/",paste(rep("_",r),collapse=""),newname,sep=""),overwrite=T)
+            }
             print(paste(newname,"saved")) 
             unlink(newlocation)
             unlink(sub(".grd",".gri",newlocation))
-            # lapply(fs,function(f){
-            #   unlink(paste("./classificador_vol_america/rasters/original/normalise/split/normalised/",f,sep=""))
-            # })
+            lapply(fs,function(f){
+              unlink(paste("./classificador_vol_america/rasters/original/normalise/split/normalised/",f,sep=""))
+            })
           }
         }
       }else if(length(rs)==1){
-        writeRaster(rs[[1]], paste("./classificador_vol_america/rasters/original/normalise/split/normalised/","_",fs,sep=""),overwrite=T)
-        # unlink(paste("./classificador_vol_america/rasters/original/normalise/split/normalised/",fs,sep=""))
+        if(last==T){
+          writeRaster(merged,"./classificador_vol_america/rasters/original/original_normalised.tif",overwrite=T)
+        }else{
+          writeRaster(rs[[1]], paste("./classificador_vol_america/rasters/original/normalise/split/normalised/","_",fs,sep=""),overwrite=T)
+        }
+        unlink(paste("./classificador_vol_america/rasters/original/normalise/split/normalised/",fs,sep=""))
       }
     # }
   }
@@ -252,12 +273,6 @@ normalise_original <- function(){
       files <- files_all[startsWith(names(files_all),"_")&!startsWith(names(files_all),"__")]
       print(paste(length(files),"files to merge"))
       files_split <- split(files,ceiling(seq_along(files)/4))
-      rm(files)
-    }else if(r<=4){
-      files <- files_all[startsWith(names(files_all),paste(rep("_",r-1),collapse=""))&!startsWith(names(files_all),paste(rep("_",r),collapse=""))]
-      # files <- files_all[startsWith(names(files_all),"_")&!startsWith(names(files_all),"__")]
-      print(paste(length(files),"files to merge"))
-      files_split <- split(files,ceiling(seq_along(files)/3))
       rm(files)
     }else{
       files <- files_all[startsWith(names(files_all),paste(rep("_",r-1),collapse=""))&!startsWith(names(files_all),paste(rep("_",r),collapse=""))]
@@ -298,7 +313,7 @@ normalise_original <- function(){
             merge_rasters_(fs,r,rasterinmemory)
           },r,rasterinmemory)
           stopCluster(cl)
-          rm(cl)    
+          rm(cl)
           gc()
           unlink("./classificador_vol_america/logs/normalise_original_merge.txt")
           rm(tt)
@@ -312,7 +327,6 @@ normalise_original <- function(){
     r <- r+1
   }
   rm(r)
-  
 }
 
 

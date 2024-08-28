@@ -61,7 +61,8 @@ smoothen_raster_2_set <- function(){
     limit <- st_read("./classificador_vol_america/vect/limit.gpkg")
     area <- as.numeric(st_area(limit))
     library(parallel)
-    factor <- sqrt(detectCores()/4)*sqrt(as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo",intern=TRUE))/1024/12000)
+    # factor <- sqrt(detectCores()/4)*sqrt(as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo",intern=TRUE))/1024/12000)
+    factor <- sqrt(as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo",intern=TRUE))/1024/9000)/(sqrt(detectCores())/3.2)
     smoothen_raster_2_grid <- create_grid(limit,round(sqrt(area)/(factor*resolution*9000)),round(sqrt(area)/(factor*resolution*9000)))
     save(smoothen_raster_2_grid,file="./classificador_vol_america/temp/smoothen_raster_2_grid.RData")
     rm(area)
@@ -69,15 +70,34 @@ smoothen_raster_2_set <- function(){
     rm(resolution)
   }
   dir.create("./classificador_vol_america/rasters/smoothen/split",showWarnings=F)
+  # dir.create("./classificador_vol_america/rasters/original/split",showWarnings=F)
+  n.cores <- detectCores()
+  free.mem <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo",intern=TRUE))/1024
+  if(ceiling(sqrt(free.mem)/(252/7))<=n.cores){
+    n.cores<-ceiling(sqrt(free.mem)/(252/7))
+  }
+  
+  # n.cores <- detectCores()
+  sapply(list.files("./classificador_vol_america/rasters/smoothen/split",pattern=".tif$")[order(sapply(list.files("./classificador_vol_america/rasters/smoothen/split",pattern=".tif$"),function(x){
+    file.info(paste("./classificador_vol_america/rasters/smoothen/split/",x,sep=""))$mtime
+  }),decreasing=T)][1:n.cores],function(x){
+    unlink(paste("./classificador_vol_america/rasters/smoothen/split/",x,sep=""))
+  })
+  sapply(list.files("./classificador_vol_america/rasters/smoothen/split",pattern=".tif$"),function(x){
+    if(file.info(paste("./classificador_vol_america/rasters/smoothen/split/",x,sep=""))$size==0){
+      unlink(paste("./classificador_vol_america/rasters/smoothen/split/",x,sep=""))
+    }
+  })
+  
   ids_done <- sapply(list.files("./classificador_vol_america/rasters/smoothen/split",pattern=".tif$"),function(x){
     as.numeric(sub(".tif","",x))
   })
-  ids_done <- ids_done[-which.max(sapply(list.files("./classificador_vol_america/rasters/smoothen/split",pattern=".tif$",full.names=T),function(x){
-    file.info(x)$mtime
-  }))]
+  # ids_done <- ids_done[-which.max(sapply(list.files("./classificador_vol_america/rasters/original/split",pattern=".tif$",full.names=T),function(x){
+  #   file.info(x)$mtime
+  # }))]
   smoothen_raster_2_grid <- smoothen_raster_2_grid[!smoothen_raster_2_grid$id%in%ids_done,]
   print(paste("Smoothen set - grid of ",nrow(smoothen_raster_2_grid), " elements to cut from raster",sep=""))
-  n.cores <- detectCores()
+  # n.cores <- detectCores()
   cl <- create_cluster_clump_(n.cores,"smoothen_raster_2_set")
   parLapplyLB(cl,smoothen_raster_2_grid$id,function(id, smoothen_raster_2_grid, rast){
     print(smoothen_raster_2_grid[smoothen_raster_2_grid$id==id,]$id)

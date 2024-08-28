@@ -1,4 +1,4 @@
-library(parallel)
+# library(parallel)
 library(supercells)
 library(stars)
 library(plyr)
@@ -51,6 +51,8 @@ clump_extra <- function(){
   source("./classificador_vol_america/scripts/clump_vector.R")
   dir.create("./classificador_vol_america/entrenament extra/vector/clumped",showWarnings=F)
   files <- list.files("./classificador_vol_america/entrenament extra/vector/simplified",pattern=".gpkg$")
+  done <- list.files("./classificador_vol_america/entrenament extra/vector/clumped",pattern=".gpkg$")
+  files <- files[!files%in%done]
   lapply(files,function(file){
     id <- gsub(".gpkg","",file)
     print(id)
@@ -67,7 +69,10 @@ clump_extra <- function(){
     
     dir.create("./classificador_vol_america/vect/temp/",showWarnings=F)
     dir.create("./classificador_vol_america/vect/temp/clumped/",showWarnings=F)
+    unlink(paste("./classificador_vol_america/vect/temp/clumped/",id,"/",sep=""),recursive=T)
+    unlink(paste("./classificador_vol_america/rasters/temp/",id,"/",sep=""),recursive=T)
     dir.create(paste("./classificador_vol_america/vect/temp/clumped/",id,sep=""),showWarnings=F)
+    dir.create(paste("./classificador_vol_america/rasters/temp/clumped/",id,sep=""),showWarnings=F)
     # clump_vector_simplify(vect,rast,quad_id=id,file_id=id,km=1,log=T,prepare=T,parallelextract=T)
     
     clump_vector(vect,rast,quad_id=id,file_id=id,
@@ -76,9 +81,14 @@ clump_extra <- function(){
                              parallelextract=T,forceddnextract=T)
       
     vect <- st_as_sf(readRDS(paste("./classificador_vol_america/vect/temp/clumped/",id,"/",id,".rds",sep="")))
+    unlink(paste("./classificador_vol_america/vect/temp/clumped/",id,"/",sep=""),recursive=T)
+    unlink(paste("./classificador_vol_america/rasters/temp/",id,"/",sep=""),recursive=T)
     
-    unlink(paste("./classificador_vol_america/entrenament extra/vector/simplified/",id,".gpkg",sep=""))
-    st_write(vect,paste("./classificador_vol_america/entrenament extra/vector/simplified/",id,".gpkg",sep=""))
+    unlink(paste("./classificador_vol_america/entrenament extra/vector/clumped/",id,".gpkg",sep=""))
+    st_write(vect,paste("./classificador_vol_america/entrenament extra/vector/clumped/",id,".gpkg",sep=""))
+    rm(rast)
+    rm(vect)
+    gc()
     return(T)
   })
   return(T)

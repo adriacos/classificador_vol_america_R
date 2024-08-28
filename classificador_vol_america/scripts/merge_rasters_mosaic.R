@@ -52,7 +52,7 @@ merge_rasters_ <- function(files_split,dir,r,rasterinmemory=NULL){
         if(!is.null(rasterinmemory)){
           rasterOptions(maxmemory=rasterinmemory)
         }
-        merged <- mosaic(merged, r2,fun=mean)
+        merged <- mosaic(merged, r2,fun=mean,na.rm=T)
         newlocation <- merged@file@name
         if(i!=2&oldlocation!=""&oldlocation!=newlocation){
           unlink(oldlocation)
@@ -138,41 +138,41 @@ repeat{
     #   rasterinmemory <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo",intern=TRUE))*1024*1.5
     #   merge_rasters_(files_split,dir,r,rasterinmemory)
     # }else{
-    # if(length(files_split)>1){
-    n.cores <- detectCores()
-    free.mem <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo",intern=TRUE))/1024
-    if(ceiling(sqrt(free.mem)/(252/9))<=n.cores){
-      n.cores<-ceiling(sqrt(free.mem)/(252/9))
-    }
-    if(r>1){
-      n.cores <- ceiling(n.cores/(r))
-    }
-    n.cores <- 1
-    unlink("./classificador_vol_america/logs/merge_supercells_rasters.txt")
-    if(n.cores>1){
-      files_split <- files_split <- split(files_split, cut(seq_along(files_split),n.cores,labels=F))
-      rasterinmemory <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo",intern=TRUE))*1024/(n.cores*1.5)
-      source("./classificador_vol_america/scripts/clump_vector.R")
-      cl <- create_cluster_clump_(n.cores,"merge_supercells_rasters")
-      tt <- parLapplyLB(cl,files_split,function(fs,dir,r,rasterinmemory){
-        merge_rasters_(fs,dir,r,rasterinmemory)
-      },dir,r,rasterinmemory)
-      stopCluster(cl)
-      rm(cl)
-      unlink("./classificador_vol_america/logs/merge_supercells_rasters.txt")
-      rm(tt)  
-    }else{
-      rasterinmemory <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo",intern=TRUE))*1024/(n.cores*1.5)
-      merge_rasters_(files_split,dir,r,rasterinmemory)
-    }
-    
-    # }else{
-    #   rasterinmemory <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo",intern=TRUE))*1024*1.5
-    #   merge_rasters_(files_split[[1]],dir,r,rasterinmemory)
+      # if(length(files_split)>1){
+        n.cores <- detectCores()
+        free.mem <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo",intern=TRUE))/1024
+        if(ceiling(sqrt(free.mem)/(252/9))<=n.cores){
+          n.cores<-ceiling(sqrt(free.mem)/(252/9))
+        }
+        if(r>1){
+          n.cores <- ceiling(n.cores/(r))
+        }
+        n.cores <- 1
+        unlink("./classificador_vol_america/logs/merge_supercells_rasters.txt")
+        if(n.cores>1){
+          files_split <- files_split <- split(files_split, cut(seq_along(files_split),n.cores,labels=F))
+          rasterinmemory <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo",intern=TRUE))*1024/(n.cores*1.5)
+          source("./classificador_vol_america/scripts/clump_vector.R")
+          cl <- create_cluster_clump_(n.cores,"merge_supercells_rasters")
+          tt <- parLapplyLB(cl,files_split,function(fs,dir,r,rasterinmemory){
+            merge_rasters_(fs,dir,r,rasterinmemory)
+          },dir,r,rasterinmemory)
+          stopCluster(cl)
+          rm(cl)
+          unlink("./classificador_vol_america/logs/merge_supercells_rasters.txt")
+          rm(tt)  
+        }else{
+          rasterinmemory <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo",intern=TRUE))*1024/(n.cores*1.5)
+          merge_rasters_(files_split,dir,r,rasterinmemory)
+        }
+        
+      # }else{
+      #   rasterinmemory <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo",intern=TRUE))*1024*1.5
+      #   merge_rasters_(files_split[[1]],dir,r,rasterinmemory)
+      # }
     # }
-    # }
-    library(rstudioapi)
-    restartSession(command=source("./classificador_vol_america/scripts/merge_rasters_mosaic.R"))
+        library(rstudioapi)
+        restartSession(command=source("./classificador_vol_america/scripts/merge_rasters_mosaic.R"))
   }
   rm(files_split)
   r <- r+1
@@ -303,7 +303,7 @@ for(rs in rasters_split){
   restartSession(command=source("./classificador_vol_america/scripts/merge_rasters_mosaic.R"))
 }
 
-
+  
 if(length(list.files(paste(dir, "temp/",sep="")))>1){
   files <- list.files(paste(dir, "temp/",sep=""), pattern = "\\.tif$")
   rasters <- sapply(files,function(f){

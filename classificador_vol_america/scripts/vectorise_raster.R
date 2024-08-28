@@ -54,22 +54,45 @@ vectorise_raster_set <- function(rast){
   # grid <- create_grid(limit,round(sqrt(area)/(sqrt(resolution)*2000)),round(sqrt(area)/(sqrt(resolution)*2000)))
   
   dir.create("./classificador_vol_america/rasters/smoothen2/split", showWarnings = FALSE)
-  ids_done <- sapply(list.files("./classificador_vol_america/vect/vectorised/split/ori",pattern=".rds$"),function(x){
-  # ids_done <- sapply(list.files("./classificador_vol_america/rasters/smoothen2/split",pattern=".tif$"),function(x){
-    # as.numeric(sub(".tif","",x))
-    as.numeric(sub(".rds","",x))
-  })
+  # ids_done <- sapply(list.files("./classificador_vol_america/vect/vectorised/split/ori",pattern=".rds$"),function(x){
+  # # ids_done <- sapply(list.files("./classificador_vol_america/rasters/smoothen2/split",pattern=".tif$"),function(x){
+  #   # as.numeric(sub(".tif","",x))
+  #   as.numeric(sub(".rds","",x))
+  # })
 
   # ids_done <- sapply(list.files("./classificador_vol_america/vect/vectorised/split/ori",pattern=".rds$"),function(x){
   #   as.numeric(sub(".rds","",x))
   # })
   
-  smoothen_raster_2_grid <- smoothen_raster_2_grid[!smoothen_raster_2_grid$id%in%ids_done,]
-
-  print(paste(nrow(smoothen_raster_2_grid)," grid elements to cut from smoothened raster",sep=""))
+  
   
   library(parallel)
-  n.cores <- detectCores()-(detectCores()/4)
+  
+  n.cores <- detectCores()
+  free.mem <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo",intern=TRUE))/1024
+  if(ceiling(sqrt(free.mem)/(252/6))<=n.cores){
+    n.cores<-ceiling(sqrt(free.mem)/(252/6))
+  }
+  
+  sapply(list.files("./classificador_vol_america/rasters/smoothen2/split",pattern=".tif$")[order(sapply(list.files("./classificador_vol_america/rasters/smoothen2/split",pattern=".tif$"),function(x){
+    file.info(paste("./classificador_vol_america/rasters/smoothen2/split/",x,sep=""))$mtime
+  }),decreasing=T)][1:n.cores],function(x){
+    unlink(paste("./classificador_vol_america/rasters/smoothen2/split/",x,sep=""))
+  })
+  sapply(list.files("./classificador_vol_america/rasters/smoothen2/split",pattern=".tif$"),function(x){
+    if(file.info(paste("./classificador_vol_america/rasters/smoothen2/split/",x,sep=""))$size==0){
+      unlink(paste("./classificador_vol_america/rasters/smoothen2/split/",x,sep=""))
+    }
+  })
+  
+  ids_done <- sapply(list.files("./classificador_vol_america/rasters/smoothen2/split",pattern=".tif$"),function(x){
+    # as.numeric(sub(".tif","",x))
+    as.numeric(sub(".tif","",x))
+  })
+  smoothen_raster_2_grid <- smoothen_raster_2_grid[!smoothen_raster_2_grid$id%in%ids_done,]
+  
+  print(paste(nrow(smoothen_raster_2_grid)," grid elements to cut from smoothened raster",sep=""))
+  
   unlink("./classificador_vol_america/logs/vectorise_raster_set.txt")
   cl <- create_cluster_clump_(n.cores,"vectorise_raster_set")
   parLapplyLB(cl,smoothen_raster_2_grid$id,function(id, grid, rast){
@@ -101,7 +124,7 @@ vectorise_raster_set <- function(rast){
     as.numeric(sub(".tif","",x))
   })
   smoothen_raster_2_grid <- smoothen_raster_2_grid[!smoothen_raster_2_grid$id%in%ids_done,]
-  if(nrow(smoothen_raster_grid)>0){
+  if(nrow(smoothen_raster_2_grid)>0){
     vectorise_raster_ini()
   }
   rm(smoothen_raster_2_grid)
@@ -122,7 +145,8 @@ vectorise_raster_do_ <- function(file,
   print(as.numeric(sub(".tif","",file)))
   # rast <- rasters_list[[i]]
   rast <- rast(rast)
-  vect <- as.polygons(rast, dissolve=T, trunc=F)
+  # vect <- as.polygons(rast, dissolve=T, trunc=F)
+  vect <- as.polygons(rast)
   rm(rast)
   vect <- disagg(vect)
   # vect <- as(vect, "Spatial")

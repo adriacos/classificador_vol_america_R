@@ -53,7 +53,8 @@ merge_rasters_ <- function(files_split,dir,r,rasterinmemory=NULL){
         if(!is.null(rasterinmemory)){
           rasterOptions(maxmemory=rasterinmemory)
         }
-        merged <- mosaic(merged, r2,fun=mean)
+        # merged <- mosaic(merged, r2,fun=mean)
+        merged <- merge(merged, r2)
         newlocation <- merged@file@name
         if(i!=2&oldlocation!=""&oldlocation!=newlocation){
           unlink(oldlocation)
