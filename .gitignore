@@ -3,3 +3,6 @@
 .RData
 .Ruserdata
 classificador_vol_america/rasters/ids_corrupted.txt
+*.tif
+*.tif
+*.txt
